@@ -18,7 +18,10 @@ import {
   BookOpen,
   AlertCircle,
   Lightbulb,
-  DollarSign
+  DollarSign,
+  Settings,
+  Send,
+  Database
 } from 'lucide-react';
 
 // --- Constants & Types ---
@@ -152,35 +155,51 @@ Requisitos:
     },
     {
       id: 2,
-      title: "Upload",
-      subtitle: "Subir os arquivos para o GitHub.",
-      icon: <UploadCloud className="w-6 h-6" />,
+      title: "Git Connect",
+      subtitle: "Sincronização direta sem terminal.",
+      icon: <Database className="w-6 h-6" />,
       color: "bg-white text-black",
       content: (
         <div className="space-y-8">
           <div className="space-y-6 bg-white/5 border border-white/10 rounded-sm p-6">
-            <h4 className="font-black text-white uppercase tracking-tighter text-xl">1. Criar Repositório</h4>
-            <ol className="space-y-3 text-slate-400 text-sm font-bold uppercase tracking-wide">
-              <li className="flex gap-4 items-start"><span className="text-[#00FF88]">•</span> Clique em <strong className="text-white">New repository</strong></li>
-              <li className="flex gap-4 items-start"><span className="text-[#00FF88]">•</span> Nome: <code className="bg-white/10 px-2 py-0.5 rounded-sm text-[#00FF88] font-mono">meu-site</code></li>
-              <li className="flex gap-4 items-start"><span className="text-[#00FF88]">•</span> Visibilidade: <strong className="text-white underline decoration-[#00FF88]">Public</strong></li>
-              <li className="flex gap-4 items-start"><span className="text-[#00FF88]">•</span> Clique em <strong className="bg-[#00FF88] text-black px-2 py-0.5 rounded-sm">Create</strong></li>
-            </ol>
+            <h4 className="font-black text-[#00FF88] uppercase tracking-tighter text-xl flex items-center gap-2">
+              <Settings size={20} /> 1. Configurando no app.new
+            </h4>
+            <p className="text-slate-400 text-sm font-bold uppercase tracking-wide">
+              No painel do seu projeto, acesse <span className="text-white">Configurações → Integrações</span> e conecte sua conta do GitHub.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               <div className="p-4 bg-white/5 border border-white/10 rounded-sm">
+                  <p className="text-[10px] text-slate-500 font-black mb-1">REPOSITÓRIO</p>
+                  <p className="text-xs text-white font-mono">meu-site-pro</p>
+               </div>
+               <div className="p-4 bg-white/5 border border-white/10 rounded-sm">
+                  <p className="text-[10px] text-slate-500 font-black mb-1">VISIBILIDADE</p>
+                  <p className="text-xs text-[#00FF88] font-bold uppercase">Public</p>
+               </div>
+            </div>
+            <button className="w-full py-3 bg-[#00FF88] text-black font-black uppercase text-xs tracking-widest hover:bg-[#00E57A] transition-colors">
+              Create Git Repository
+            </button>
           </div>
 
           <div className="space-y-6 bg-[#00FF88]/10 border border-[#00FF88]/20 rounded-sm p-6">
-            <h4 className="font-black text-[#00FF88] uppercase tracking-tighter text-xl">2. Upload Fácil</h4>
-            <p className="text-xs text-[#00FF88]/70 font-bold uppercase tracking-widest">Procedimento sem terminal:</p>
-            <ol className="space-y-3 text-slate-300 text-sm font-bold uppercase tracking-wide">
-              <li className="flex gap-4 items-start"><span className="text-white">A.</span> Clique em <strong className="text-white">Add file</strong> → <strong className="text-white">Upload files</strong></li>
-              <li className="flex gap-4 items-start"><span className="text-white">B.</span> Arraste seus arquivos para o navegador</li>
-              <li className="flex gap-4 items-start"><span className="text-white">C.</span> Clique em <strong className="text-white">Commit changes</strong></li>
-            </ol>
-          </div>
-
-          <div className="flex flex-col items-start gap-2">
-            <div className="bg-white text-black px-4 py-1 font-black text-xs inline-block">STATUS: SYNCED</div>
-            <p className="text-xs text-slate-500 font-bold uppercase italic tracking-widest">Seu site agora está seguro na nuvem.</p>
+            <h4 className="font-black text-white uppercase tracking-tighter text-xl flex items-center gap-2">
+              <Send size={20} className="text-[#00FF88]" /> 2. Commit & Push
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               <div className="space-y-2">
+                 <p className="text-xs font-black text-white uppercase">💾 COMMIT</p>
+                 <p className="text-[10px] text-slate-400 font-bold uppercase leading-tight italic">"Salva uma versão interna do seu trabalho"</p>
+               </div>
+               <div className="space-y-2">
+                 <p className="text-xs font-black text-[#00FF88] uppercase">🚀 PUSH</p>
+                 <p className="text-[10px] text-slate-400 font-bold uppercase leading-tight italic">"Envia tudo para o GitHub na nuvem"</p>
+               </div>
+            </div>
+            <div className="bg-black/40 p-3 font-mono text-[11px] text-slate-300 border-l-2 border-[#00FF88]">
+              Mensagem: "Primeira versão do site criada com app.new"
+            </div>
           </div>
         </div>
       )
@@ -233,9 +252,9 @@ Requisitos:
                <AlertCircle size={16} /> Erros Críticos
              </h5>
              <ul className="text-xs text-slate-400 font-bold uppercase space-y-3">
-               <li className="flex gap-2"><span className="text-red-500">❌</span> Esquecer o <strong className="text-white">index.html</strong></li>
-               <li className="flex gap-2"><span className="text-red-500">❌</span> Subir pasta (.zip) inteira</li>
-               <li className="flex gap-2"><span className="text-red-500">❌</span> Espaços nos nomes de arquivos</li>
+               <li className="flex gap-2"><span className="text-red-500">❌</span> Esquecer de clicar em <strong className="text-white">Push</strong></li>
+               <li className="flex gap-2"><span className="text-red-500">❌</span> Não escrever mensagem no commit</li>
+               <li className="flex gap-2"><span className="text-red-500">❌</span> Criar repositório com nome errado</li>
              </ul>
           </div>
           <div className="p-6 rounded-sm bg-[#00FF88]/10 border border-[#00FF88]/30">
