@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Lightbulb,
   DollarSign,
+  Instagram,
   Settings,
   Send,
   Database
@@ -418,28 +419,53 @@ Requisitos:
       </main>
 
       {/* Footer Monetization */}
-      <footer className="bg-white text-black py-10 px-8 flex flex-col md:flex-row items-center justify-between gap-8 border-t border-white/10">
-        <div className="flex-1">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2">Monetização & Carreira</h3>
-          <p className="text-xl md:text-3xl font-black uppercase tracking-tighter leading-none">
-            Crie portfólios, landing pages e venda sites profissionais.
-          </p>
-        </div>
-        
-        <div className="flex gap-12 items-center">
-          <div className="hidden sm:block">
-            <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Estrutura Ideal</h3>
-            <p className="text-xs font-mono font-black">/index.html /style.css /script.js /images</p>
+      <footer className="bg-white text-black py-12 px-8 flex flex-col gap-12 border-t border-white/10">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex-1">
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2">Monetização & Carreira</h3>
+            <p className="text-xl md:text-3xl font-black uppercase tracking-tighter leading-none">
+              Crie portfólios, landing pages e venda sites profissionais.
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-             <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_rgba(220,38,38,0.5)]" />
-             <span className="text-[10px] font-black uppercase tracking-widest italic">CUIDADO COM PASTAS</span>
-          </div>
-          <div className="flex flex-col items-end">
-            <div className="text-[10px] font-black text-slate-500 uppercase">Built for Growth</div>
-            <div className="flex gap-4 mt-2">
-              <Github size={18} className="text-slate-300 hover:text-black cursor-pointer transition-colors" />
+          
+          <div className="flex gap-12 items-center">
+            <div className="hidden sm:block">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Estrutura Ideal</h3>
+              <p className="text-xs font-mono font-black">/index.html /style.css /script.js /images</p>
             </div>
+            <div className="flex items-center gap-3">
+               <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_rgba(220,38,38,0.5)]" />
+               <span className="text-[10px] font-black uppercase tracking-widest italic">CUIDADO COM PASTAS</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Credits Section */}
+        <div className="pt-12 border-t border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+          <div className="space-y-4">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Desenvolvido por</p>
+              <h4 className="text-2xl font-black uppercase tracking-tighter">João Layon</h4>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Fullstack Developer & CEO ds Company</p>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <a href="https://instagram.com/layon.dev" target="_blank" className="flex items-center gap-2 text-xs font-black uppercase hover:text-[#00FF88] transition-colors">
+                <Instagram size={14} /> @layon.dev
+              </a>
+              <a href="https://instagram.com/dscompany1_" target="_blank" className="flex items-center gap-2 text-xs font-black uppercase hover:text-[#00FF88] transition-colors">
+                <Instagram size={14} /> @dscompany1_
+              </a>
+              <a href="https://instagram.com/davi._link" target="_blank" className="flex items-center gap-2 text-xs font-black uppercase hover:text-[#00FF88] transition-colors">
+                <Instagram size={14} /> @davi._link
+              </a>
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2 bg-black text-[#00FF88] px-3 py-1 font-black text-xs">
+              <Github size={14} /> SYSTEM_CREDENTIALS
+            </div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">© 2024 ds Company. All rights reserved.</p>
           </div>
         </div>
       </footer>
