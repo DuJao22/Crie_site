@@ -1,20 +1,29 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# DS Company: Master IA & SaaS
 
-# Run and deploy your AI Studio app
+Este projeto é uma plataforma de ensino para criação de sites e SaaS utilizando Inteligência Artificial.
 
-This contains everything you need to run your app locally.
+## Como fazer o Deploy no Render.com
 
-View your app in AI Studio: https://ai.studio/apps/2ac78270-b6f4-489a-b2a2-36c391493389
+Para que o projeto funcione corretamente no Render, siga estas configurações:
 
-## Run Locally
+1. **Service Type**: Web Service
+2. **Runtime**: Node
+3. **Build Command**: `npm install && npm run build`
+4. **Start Command**: `npm start`
 
-**Prerequisites:**  Node.js
+### Variáveis de Ambiente (Environment Variables)
 
+Certifique-se de configurar as seguintes variáveis no painel do Render:
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+- `NODE_ENV`: production
+- `JWT_SECRET`: (uma senha longa e aleatória)
+- `ADMIN_EMAIL`: seu e-mail para acesso administrativo
+- `ADMIN_PASSWORD`: sua senha para acesso administrativo
+- `MERCADO_PAGO_ACCESS_TOKEN`: (opcional) seu token do Mercado Pago para pagamentos
+
+## Desenvolvimento Local
+
+1. Clone o repositório
+2. Execute `npm install`
+3. Execute `npm run dev`
+4. Acesse `http://localhost:3000`

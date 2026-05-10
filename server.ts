@@ -39,6 +39,16 @@ db.exec(`
     last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users (id)
   );
+
+  CREATE TABLE IF NOT EXISTS progress (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER UNIQUE NOT NULL,
+    current_step INTEGER DEFAULT 0,
+    score INTEGER DEFAULT 0,
+    answers TEXT,
+    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+  );
 `);
 
 // Support for existing tables that might be missing these columns
@@ -211,6 +221,42 @@ async function startServer() {
   app.get("/api/auth/me", authenticateToken, (req: any, res) => {
     const user = db.prepare("SELECT id, email, is_paid, is_admin FROM users WHERE id = ?").get(req.user.id) as any;
     res.json({ user });
+  });
+
+  // 4b. Progress Routes
+  app.get("/api/progress", authenticateToken, (req: any, res) => {
+    const progress = db.prepare("SELECT * FROM progress WHERE user_id = ?").get(req.user.id) as any;
+    if (progress) {
+      res.json({
+        ...progress,
+        answers: progress.answers ? JSON.parse(progress.answers) : []
+      });
+    } else {
+      res.json({ current_step: 0, score: 0, answers: [] });
+    }
+  });
+
+  app.post("/api/progress", authenticateToken, (req: any, res) => {
+    const { current_step, score, answers } = req.body;
+    const userId = req.user.id;
+    const answersStr = JSON.stringify(answers || []);
+
+    try {
+      db.prepare(`
+        INSERT INTO progress (user_id, current_step, score, answers, last_updated) 
+        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(user_id) DO UPDATE SET
+          current_step = excluded.current_step,
+          score = excluded.score,
+          answers = excluded.answers,
+          last_updated = CURRENT_TIMESTAMP
+      `).run(userId, current_step || 0, score || 0, answersStr);
+      
+      res.json({ message: "Progress saved" });
+    } catch (error) {
+      console.error("Error saving progress:", error);
+      res.status(500).json({ error: "Failed to save progress" });
+    }
   });
 
   // 5. Mercado Pago Checkout
