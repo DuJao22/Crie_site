@@ -139,7 +139,7 @@ const QUESTIONS: QuizQuestion[] = [
 ];
 
 export default function App() {
-  const [view, setView] = useState<'landing' | 'login' | 'dashboard' | 'lesson' | 'checkout' | 'admin'>('landing');
+  const [view, setView] = useState<'landing' | 'login' | 'dashboard' | 'lesson' | 'checkout' | 'admin' | 'projects' | 'history'>('landing');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -150,6 +150,7 @@ export default function App() {
   const [showResult, setShowResult] = useState(false);
   const [user, setUser] = useState<{ email: string, is_paid: number, is_admin: number } | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [selectedProject, setSelectedProject] = useState<null | { title: string, desc: string, stack: string[], features: string[], logic: string }>(null);
 
   // Check auth session on mount
   useEffect(() => {
@@ -242,6 +243,210 @@ export default function App() {
 
   if (view === 'admin' && user?.is_admin) {
     return <AdminPanel onBack={() => setView('dashboard')} />;
+  }
+
+  if (view === 'projects') {
+    const projects = [
+      { 
+        title: "Landing Page Pro", 
+        desc: "Estrutura otimizada para alta conversão de vendas.", 
+        icon: <Layout className="text-brand-purple" />, 
+        tag: "INICIANTE",
+        stack: ["React", "Tailwind CSS", "Framer Motion", "Vite"],
+        features: ["Hero section persuasiva", "Grade de benefícios", "FAQ interativo", "Formulário de captura"],
+        logic: "Focada em Mobile-first e SEO. Utiliza hooks customizados para animações de entrada conforme o scroll do usuário."
+      },
+      { 
+        title: "Gerador de Bio", 
+        desc: "Mini SaaS que cria links personalizados para Instagram.", 
+        icon: <Instagram className="text-brand-pink" />, 
+        tag: "SAAS",
+        stack: ["Express", "SQLite", "Lucide React", "Auth JWT"],
+        features: ["Editor drag-and-drop", "Temas customizados", "Links ilimitados", "Analytics básico"],
+        logic: "Usa uma arquitetura de banco de dados relacional para associar múltiplos links a um único perfil de usuário."
+      },
+      { 
+        title: "Portfólio 3D", 
+        desc: "Mostre seus trabalhos com tecnologia de ponta.", 
+        icon: <Rocket className="text-brand-green" />, 
+        tag: "AVANÇADO",
+        stack: ["Three.js", "React Three Fiber", "GSAP", "Tailwind"],
+        features: ["Modelo 3D interativo", "Transições suaves", "Dark mode nativo", "Responsivo progressivo"],
+        logic: "Renderiza uma cena 3D otimizada usando React Three Fiber, com eventos de clique que controlam a câmera através do GSAP."
+      },
+      { 
+        title: "Dashboard de Vendas", 
+        desc: "Controle financeiro simples para micro-empreendedores.", 
+        icon: <DollarSign className="text-yellow-400" />, 
+        tag: "PRO",
+        stack: ["Recharts", "Date-fns", "Context API", "Local Storage"],
+        features: ["Gráficos evolutivos", "Categorização de gastos", "Relatórios mensais", "Exportação CSV"],
+        logic: "Processa arrays de transações em tempo real usando Recharts para visualização de dados dinâmica."
+      }
+    ];
+
+    return (
+      <div className="min-h-screen bg-bg-deep text-white p-6 md:p-12 font-sans relative overflow-hidden">
+        <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-brand-purple/5 blur-[150px] rounded-full pointer-events-none" />
+        <div className="max-w-4xl mx-auto space-y-12 relative z-10">
+          <div className="space-y-4">
+             <button 
+               onClick={() => setView('dashboard')}
+               className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 hover:text-white transition-colors mb-4"
+             >
+               <ChevronLeft size={16} /> Voltar ao Painel
+             </button>
+             <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none">
+               Ideias de <span className="text-brand-purple">Projetos</span>
+             </h1>
+             <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Onde a teoria encontra o faturamento.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {projects.map((p, idx) => (
+              <div key={idx} className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/[0.08] transition-all group flex flex-col gap-6">
+                <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  {p.icon}
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{p.tag}</span>
+                  </div>
+                  <h3 className="text-2xl font-black uppercase tracking-tight">{p.title}</h3>
+                  <p className="text-slate-400 font-medium text-sm leading-relaxed">{p.desc}</p>
+                </div>
+                <button 
+                  onClick={() => setSelectedProject(p as any)}
+                  className="mt-auto py-3 px-6 bg-white/5 border border-white/10 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-white hover:text-black transition-all"
+                >
+                   Ver Estrutura
+                </button>
+              </div>
+            ))}
+          </div>
+
+          {selectedProject && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-6 sm:p-12">
+               <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setSelectedProject(null)} />
+               <motion.div 
+                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                 animate={{ opacity: 1, scale: 1, y: 0 }}
+                 className="w-full max-w-2xl bg-slate-900 border border-white/10 rounded-[40px] p-8 md:p-12 relative z-10 overflow-y-auto max-h-[90vh] space-y-8"
+               >
+                  <button onClick={() => setSelectedProject(null)} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-colors">
+                    <X size={24} />
+                  </button>
+
+                  <div className="space-y-2">
+                    <span className="text-[10px] font-black text-brand-purple uppercase tracking-[0.4em]">Arquitetura Detalhada</span>
+                    <h2 className="text-4xl font-black uppercase tracking-tighter">{selectedProject.title}</h2>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <div className="space-y-4">
+                        <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Stack Tecnológica</h4>
+                        <div className="flex flex-wrap gap-2">
+                           {selectedProject.stack.map((s, i) => (
+                             <span key={i} className="px-3 py-1 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase">{s}</span>
+                           ))}
+                        </div>
+                     </div>
+                     <div className="space-y-4">
+                        <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Recursos Principais</h4>
+                        <ul className="space-y-2">
+                           {selectedProject.features.map((f, i) => (
+                             <li key={i} className="flex items-center gap-2 text-xs font-medium text-slate-300">
+                                <CheckCircle2 size={14} className="text-brand-purple" /> {f}
+                             </li>
+                           ))}
+                        </ul>
+                     </div>
+                  </div>
+
+                  <div className="p-6 rounded-2xl bg-white/5 border border-white/5 space-y-3">
+                     <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Lógica de Desenvolvimento</h4>
+                     <p className="text-sm text-slate-400 leading-relaxed font-medium">
+                       {selectedProject.logic}
+                     </p>
+                  </div>
+
+                  <button 
+                    onClick={() => { setView('lesson'); setSelectedProject(null); }}
+                    className="w-full py-4 bg-brand-purple text-white font-black uppercase text-xs tracking-widest rounded-xl hover:opacity-90 transition-all shadow-xl shadow-brand-purple/20"
+                  >
+                    Começar a Construir este Projeto
+                  </button>
+               </motion.div>
+            </div>
+          )}
+
+          <div className="p-12 rounded-[40px] bg-gradient-to-br from-brand-purple/20 to-brand-pink/20 border border-white/10 text-center space-y-6">
+             <h2 className="text-3xl font-black uppercase tracking-tight">O próximo grande SaaS</h2>
+             <p className="text-slate-400 font-medium">Você tem uma ideia única? Nossa comunidade pode te ajudar a validar.</p>
+             <button className="px-8 py-4 bg-white text-black font-black uppercase text-xs tracking-widest rounded-xl hover:opacity-90 transition-all">
+                Enviar minha Ideia
+             </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'history') {
+    return (
+      <div className="min-h-screen bg-bg-deep text-white p-6 md:p-12 font-sans relative overflow-hidden">
+        <div className="absolute -bottom-20 -left-20 w-[600px] h-[600px] bg-brand-purple/5 blur-[150px] rounded-full pointer-events-none" />
+        <div className="max-w-4xl mx-auto space-y-12 relative z-10">
+           <div className="space-y-4">
+              <button 
+                onClick={() => setView('dashboard')}
+                className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-500 hover:text-white transition-colors mb-4"
+              >
+                <ChevronLeft size={16} /> Voltar ao Painel
+              </button>
+              <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none">
+                Sua <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-pink">Jornada</span>
+              </h1>
+              <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Evolução constante no ecossistema DS.</p>
+           </div>
+
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {[
+                { label: "Módulos Concluídos", value: "02/05", icon: <CheckCircle2 className="text-brand-green" /> },
+                { label: "Pontuação Simulado", value: showResult ? `${score}/10` : "PENDENTE", icon: <Trophy className="text-yellow-400" /> },
+                { label: "Tempo de Estudo", value: "4.5 Horas", icon: <Clock className="text-brand-purple" /> }
+              ].map((stat, idx) => (
+                <div key={idx} className="p-8 rounded-3xl bg-white/5 border border-white/10 text-center space-y-4">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center mx-auto mb-2">
+                    {stat.icon}
+                  </div>
+                  <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest leading-none">{stat.label}</p>
+                  <p className="text-3xl font-black uppercase tracking-tight">{stat.value}</p>
+                </div>
+              ))}
+           </div>
+
+           <div className="space-y-6">
+              <h3 className="text-2xl font-black uppercase tracking-tight">Atividades Recentes</h3>
+              <div className="space-y-4">
+                {[
+                  { text: "Concluiu o Módulo 01: Fundamentos", date: "Há 2 dias", type: "LEVEL_UP" },
+                  { text: "Realizou o Simulado Global", date: "Há 1 dia", type: "QUIZ" },
+                  { text: "Exportou código 'Site Institucional'", date: "Há 3 horas", type: "CODE" }
+                ].map((log, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-6 border-b border-white/5 group hover:bg-white/[0.02] transition-colors rounded-xl">
+                    <div className="space-y-1">
+                      <p className="text-sm font-black uppercase tracking-tight text-white/90 group-hover:text-brand-purple transition-colors">{log.text}</p>
+                      <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{log.date}</p>
+                    </div>
+                    <span className="text-[9px] font-black uppercase px-3 py-1 bg-white/5 rounded-full text-slate-400 border border-white/10">{log.type}</span>
+                  </div>
+                ))}
+              </div>
+           </div>
+        </div>
+      </div>
+    );
   }
 
   const handleAnswer = (optionIdx: number) => {
@@ -587,15 +792,39 @@ Requisitos:
           </div>
           
           <nav className="flex flex-col gap-8">
-            <button className="text-white/40 hover:text-white transition-colors" onClick={() => setIsSidebarOpen(false)}><Home size={22} /></button>
-            <button className="text-brand-purple flex flex-col items-center gap-1 border-r-2 border-brand-purple pr-2 -mr-2" onClick={() => setIsSidebarOpen(false)}><BookOpen size={22} /></button>
-            <button className="text-white/40 hover:text-white transition-colors" onClick={() => setIsSidebarOpen(false)}><Code size={22} /></button>
-            <button className="text-white/40 hover:text-white transition-colors" onClick={() => setIsSidebarOpen(false)}><Rocket size={22} /></button>
-            <button className="text-white/40 hover:text-white transition-colors" onClick={() => setIsSidebarOpen(false)}><Clock size={22} /></button>
+            <button 
+              className={`transition-colors ${view === 'dashboard' ? 'text-brand-purple border-r-2 border-brand-purple' : 'text-white/40 hover:text-white'}`} 
+              onClick={() => { setView('dashboard'); setIsSidebarOpen(false); }}
+              title="Início"
+            >
+              <Home size={22} />
+            </button>
+            <button 
+              className={`transition-colors ${view === 'lesson' ? 'text-brand-purple border-r-2 border-brand-purple' : 'text-white/40 hover:text-white'}`} 
+              onClick={() => { setView('lesson'); setIsSidebarOpen(false); }}
+              title="Aulas"
+            >
+              <BookOpen size={22} />
+            </button>
+            <button 
+              className={`transition-colors ${view === 'projects' ? 'text-brand-purple border-r-2 border-brand-purple' : 'text-white/40 hover:text-white'}`} 
+              onClick={() => { setView('projects'); setIsSidebarOpen(false); }}
+              title="Projetos"
+            >
+              <Code size={22} />
+            </button>
+            <button 
+              className={`transition-colors ${view === 'history' ? 'text-brand-purple border-r-2 border-brand-purple' : 'text-white/40 hover:text-white'}`} 
+              onClick={() => { setView('history'); setIsSidebarOpen(false); }}
+              title="Histórico"
+            >
+              <Clock size={22} />
+            </button>
             {user?.is_admin === 1 && (
               <button 
                 className={`transition-colors ${view === 'admin' ? 'text-brand-purple border-r-2 border-brand-purple' : 'text-white/40 hover:text-white'}`} 
                 onClick={() => { setView('admin'); setIsSidebarOpen(false); }}
+                title="Admin"
               >
                 <Users size={22} />
               </button>
@@ -639,16 +868,20 @@ Requisitos:
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
                 {[
-                  { icon: <BookOpen size={16} />, text: "Material didático prático" },
-                  { icon: <FileText size={16} />, text: "Projetos completos do zero" },
-                  { icon: <Rocket size={16} />, text: "Publique e monetize seus projetos" }
+                  { icon: <BookOpen size={16} />, text: "Material didático prático", action: () => setView('lesson') },
+                  { icon: <FileText size={16} />, text: "Projetos completos do zero", action: () => setView('projects') },
+                  { icon: <Rocket size={16} />, text: "Publique e monetize seus projetos", action: () => setView('history') }
                 ].map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-4 text-[10px] md:text-sm font-bold uppercase tracking-tight text-white/80">
+                  <button 
+                    key={idx} 
+                    onClick={item.action}
+                    className="flex items-center gap-4 text-[10px] md:text-sm font-bold uppercase tracking-tight text-white/80 hover:text-white hover:bg-white/5 p-2 rounded-xl transition-all text-left"
+                  >
                     <div className="w-8 h-8 rounded-lg bg-brand-purple/20 flex items-center justify-center text-brand-purple shrink-0">
                       {item.icon}
                     </div>
                     {item.text}
-                  </div>
+                  </button>
                 ))}
               </div>
 
@@ -747,12 +980,16 @@ Requisitos:
                 <h3 className="font-black uppercase tracking-tight text-[10px] text-slate-500 tracking-widest">Recursos Extras</h3>
                 <div className="grid grid-cols-2 lg:grid-cols-1 gap-2">
                   {[
-                    { icon: <FileText size={18} />, title: "Templates" },
-                    { icon: <CheckSquare size={18} />, title: "Checklists" },
-                    { icon: <MessageSquareIcon size={18} />, title: "IA Prompts" },
-                    { icon: <Users size={18} />, title: "Comunidade" }
+                    { icon: <FileText size={18} />, title: "Templates", action: () => setView('projects') },
+                    { icon: <CheckSquare size={18} />, title: "Checklists", action: () => setView('lesson') },
+                    { icon: <MessageSquareIcon size={18} />, title: "IA Prompts", action: () => { setView('lesson'); setCurrentStep(1); } },
+                    { icon: <Users size={18} />, title: "Comunidade", action: () => window.open('https://discord.gg', '_blank') }
                   ].map((item, idx) => (
-                    <button key={idx} className="flex items-center gap-3 w-full p-2 hover:bg-white/5 rounded-xl transition-colors text-white/60 hover:text-white group">
+                    <button 
+                      key={idx} 
+                      onClick={item.action}
+                      className="flex items-center gap-3 w-full p-2 hover:bg-white/5 rounded-xl transition-colors text-white/60 hover:text-white group"
+                    >
                       <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center group-hover:text-brand-purple transition-colors shrink-0">
                         {item.icon}
                       </div>
