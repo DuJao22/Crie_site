@@ -67,9 +67,14 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
             >
               Quero Começar Agora 🚀
             </button>
-            <button className="px-10 py-5 bg-white/5 border border-white/10 text-white font-black uppercase text-sm tracking-widest rounded-xl hover:bg-white/10 transition-all">
-              Ver Projetos Reais
-            </button>
+                <a 
+                  href="https://bio.site/Joao_Layon_DS_Company" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="px-10 py-5 bg-white/5 border border-white/10 text-white font-black uppercase text-sm tracking-widest rounded-xl hover:bg-white/10 transition-all flex items-center justify-center"
+                >
+                  Ver Projetos Reais
+                </a>
           </motion.div>
 
           {/* Social Proof */}

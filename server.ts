@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
+import cors from "cors";
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 dotenv.config();
@@ -92,8 +93,20 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
 
+  app.use(cors({
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  }));
   app.use(express.json());
   app.use(cookieParser());
+
+  // Global logger for debugging
+  app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+  });
 
   // --- Auth Middleware ---
   const authenticateToken = (req: any, res: any, next: any) => {
@@ -158,18 +171,41 @@ async function startServer() {
     res.json({ message: "User deleted" });
   });
 
-  // 1. Initial Admin/User Registration (Open for demo/setup)
+  // 1. Initial Admin/User Registration
   app.post("/api/auth/register", async (req, res) => {
     const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
       const info = db.prepare("INSERT INTO users (email, password) VALUES (?, ?)").run(email, hashedPassword);
-      res.status(201).json({ message: "User created", id: info.lastInsertRowid });
+      
+      const userId = info.lastInsertRowid;
+      const user = { id: userId, email, is_admin: 0, is_paid: 0 };
+      
+      // Auto login after registration
+      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "24h" });
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+      db.prepare("INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)").run(user.id, token, expiresAt);
+
+      res.cookie("auth_token", token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: "none",
+        maxAge: 24 * 60 * 60 * 1000,
+      });
+
+      console.log(`User registered and logged in: ${email}`);
+      res.status(201).json({ message: "User created", user: { email: user.email, is_admin: 0, is_paid: 0 } });
     } catch (error: any) {
       if (error.message.includes("UNIQUE constraint failed")) {
         return res.status(400).json({ error: "Email already registered" });
       }
-      res.status(500).json({ error: "Internal server error" });
+      console.error("Registration error:", error);
+      res.status(500).json({ error: "Internal server error during registration" });
     }
   });
 
@@ -263,53 +299,73 @@ async function startServer() {
   });
 
   // 5. Mercado Pago Checkout
-  app.post("/api/checkout/create-preference", authenticateToken, async (req: any, res) => {
+  const createPreferenceHandler = async (req: any, res: any) => {
     if (!client) {
       return res.status(500).json({ error: "Mercado Pago not configured on server" });
     }
 
     try {
+      const host = req.get('x-forwarded-host') || req.get('host') || 'localhost:3000';
+      const protocol = host.includes('localhost') ? 'http' : 'https';
+      const baseUrl = `${protocol}://${host}`;
+      
+      console.log(`MP Preference Attempt: baseUrl=${baseUrl}`);
+
       const preference = new Preference(client);
-      const result = await preference.create({
-        body: {
-          items: [
-            {
-              id: 'ds-company-course',
-              title: 'Acesso Vitalício: DS Company Study',
-              quantity: 1,
-              unit_price: 39.90,
-              currency_id: 'BRL',
-            }
-          ],
-          payer: {
-            email: req.user.email,
-          },
-          external_reference: String(req.user.id),
-          back_urls: {
-            success: `${req.protocol}://${req.get('host')}/api/checkout/verify?status=success`,
-            failure: `${req.protocol}://${req.get('host')}/dashboard?payment=failure`,
-            pending: `${req.protocol}://${req.get('host')}/dashboard?payment=pending`,
-          },
-          auto_return: 'approved',
-        }
-      });
+      const body = {
+        items: [
+          {
+            id: 'ds-company-course',
+            title: 'Acesso Vitalício: DS Company Study',
+            quantity: 1,
+            unit_price: 39.90,
+            currency_id: 'BRL',
+          }
+        ],
+        payer: {
+          email: req.user.email,
+        },
+        external_reference: String(req.user.id),
+        back_urls: {
+          success: `${baseUrl}/api/checkout/verify`,
+          failure: `${baseUrl}/dashboard`,
+          pending: `${baseUrl}/dashboard`,
+        },
+        auto_return: 'approved',
+        binary_mode: true,
+      };
+
+      console.log('MP Preference Body Sent:', JSON.stringify(body, null, 2));
+
+      const result = await preference.create({ body });
 
       res.json({ id: result.id, init_point: result.init_point });
-    } catch (error) {
-      console.error('MP Preference Error:', error);
-      res.status(500).json({ error: "Failed to create payment preference" });
+    } catch (error: any) {
+      console.error('MP Preference Error Detail:', error.message || error);
+      if (error.response) {
+        console.error('MP Response Error:', JSON.stringify(error.response, null, 2));
+      }
+      res.status(500).json({ error: "Failed to create payment preference", details: error.message });
     }
-  });
+  };
+
+  app.post("/api/checkout/create-preference", authenticateToken, createPreferenceHandler);
+  app.get("/api/checkout/create-preference", authenticateToken, createPreferenceHandler);
 
   // 6. Payment Verification (Simplified for this setup)
   app.get("/api/checkout/verify", authenticateToken, (req: any, res) => {
-    const status = req.query.status;
-    if (status === 'success') {
+    const status = req.query.status || req.query.collection_status;
+    if (status === 'success' || status === 'approved') {
       db.prepare("UPDATE users SET is_paid = 1 WHERE id = ?").run(req.user.id);
       res.redirect('/dashboard?payment_confirmed=true');
     } else {
       res.redirect('/dashboard?payment_failed=true');
     }
+  });
+
+  // Handle 404 for API routes to avoid returning HTML
+  app.all("/api/*", (req, res) => {
+    res.status(404).json({ error: "API endpoint not found", path: req.originalUrl });
   });
 
   // --- Error Handling ---

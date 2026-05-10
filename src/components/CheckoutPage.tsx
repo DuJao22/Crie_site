@@ -8,7 +8,8 @@ import {
   Zap, 
   CheckCircle2, 
   Lock,
-  ArrowRight
+  ArrowRight,
+  ExternalLink
 } from 'lucide-react';
 
 interface CheckoutPageProps {
@@ -26,12 +27,19 @@ export default function CheckoutPage({ onBack, onSuccess }: CheckoutPageProps) {
 
     try {
       const response = await fetch('/api/checkout/create-preference', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: 'GET',
         credentials: 'include',
       });
 
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error('Unexpected response:', text);
+        throw new Error(`Erro do servidor (${response.status}).`);
+      }
 
       if (!response.ok) {
         throw new Error(data.error || 'Erro ao processar pagamento');
@@ -73,6 +81,15 @@ export default function CheckoutPage({ onBack, onSuccess }: CheckoutPageProps) {
              <p className="text-slate-400 font-medium text-lg max-w-md">
                Desbloqueie todos os módulos, ferramentas de IA e comunidade exclusiva hoje mesmo.
              </p>
+             
+             <a 
+               href="https://bio.site/Joao_Layon_DS_Company" 
+               target="_blank" 
+               rel="noopener noreferrer"
+               className="inline-flex items-center gap-2 text-[10px] font-black uppercase text-brand-purple hover:underline"
+             >
+               <ExternalLink size={14} /> Ver Projetos Reais de Alunos
+             </a>
           </div>
 
           <div className="space-y-4">

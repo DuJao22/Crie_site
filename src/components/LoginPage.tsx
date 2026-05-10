@@ -5,10 +5,9 @@ import { ChevronLeft, Lock, Mail, Github, Layout } from 'lucide-react';
 interface LoginPageProps {
   onBack: () => void;
   onLogin: () => void;
-  onCheckout: () => void;
 }
 
-export default function LoginPage({ onBack, onLogin, onCheckout }: LoginPageProps) {
+export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -46,8 +45,9 @@ export default function LoginPage({ onBack, onLogin, onCheckout }: LoginPageProp
       }
 
       if (isRegister) {
-        setSuccess('Conta criada com sucesso! Faça login agora.');
-        setIsRegister(false);
+        setSuccess('Conta criada com sucesso! Redirecionando...');
+        // The backend now returns user data and sets cookie on register
+        setTimeout(() => onLogin(), 1000);
       } else {
         onLogin();
       }
@@ -175,7 +175,7 @@ export default function LoginPage({ onBack, onLogin, onCheckout }: LoginPageProp
           </div>
 
           <p className="text-center text-[10px] font-black uppercase text-slate-600 tracking-widest pb-12">
-            Ainda não é aluno? <button onClick={onCheckout} className="text-brand-purple hover:underline">Assine agora</button>
+            Ainda não é aluno? <button onClick={() => setIsRegister(true)} className="text-brand-purple hover:underline">Assine agora</button>
           </p>
         </motion.div>
       </div>

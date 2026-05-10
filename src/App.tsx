@@ -153,6 +153,16 @@ export default function App() {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [selectedProject, setSelectedProject] = useState<null | { title: string, desc: string, stack: string[], features: string[], logic: string }>(null);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment_confirmed') === 'true') {
+      if (user) {
+        setUser({ ...user, is_paid: 1 });
+        fetchProgress();
+      }
+    }
+  }, [window.location.search, user !== null]);
+
   // Check auth session on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -419,11 +429,14 @@ Requisitos:
     try {
       const res = await fetch('/api/progress', { credentials: 'include' });
       if (res.ok) {
-        const data = await res.json();
-        setCurrentStep(data.current_step || 0);
-        setAnswers(data.answers || []);
-        if ((data.score || 0) >= 7) {
-          setModule2Unlocked(true);
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await res.json();
+          setCurrentStep(data.current_step || 0);
+          setAnswers(data.answers || []);
+          if ((data.score || 0) >= 7) {
+            setModule2Unlocked(true);
+          }
         }
       }
     } catch (e) {
@@ -439,6 +452,7 @@ Requisitos:
           await fetch('/api/progress', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
               current_step: currentStep,
               score: score,
@@ -455,7 +469,7 @@ Requisitos:
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
       setUser(null);
       setView('landing');
     } catch (e) {
@@ -465,16 +479,19 @@ Requisitos:
 
   const handleLoginSuccess = async () => {
     // Re-verify session after login
-    const res = await fetch('/api/auth/me');
+    const res = await fetch('/api/auth/me', { credentials: 'include' });
     if (res.ok) {
-      const data = await res.json();
-      setUser(data.user);
-      
-      if (data.user.is_paid === 0) {
-        setView('checkout');
-      } else {
-        setView('dashboard');
-        fetchProgress();
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await res.json();
+        setUser(data.user);
+        
+        if (data.user.is_paid === 0) {
+          setView('checkout');
+        } else {
+          setView('dashboard');
+          fetchProgress();
+        }
       }
     }
   };
@@ -487,22 +504,63 @@ Requisitos:
     );
   }
 
-  if (view === 'landing' && !user) {
-    return <LandingPage onStart={() => setView('checkout')} onLogin={() => setView('login')} />;
+  // --- View Routing Logic ---
+
+  // 1. Landing Page (Public)
+  if (view === 'landing') {
+    return (
+      <LandingPage 
+        onStart={() => {
+          if (!user) setView('login');
+          else if (user.is_paid === 0) setView('checkout');
+          else setView('dashboard');
+        }} 
+        onLogin={() => {
+          if (!user) setView('login');
+          else if (user.is_paid === 0) setView('checkout');
+          else setView('dashboard');
+        }} 
+      />
+    );
   }
 
-  if (view === 'login' && !user) {
-    return <LoginPage onBack={() => setView('landing')} onLogin={handleLoginSuccess} onCheckout={() => setView('checkout')} />;
+  // 2. Login Page (Public-ish)
+  if (view === 'login') {
+    if (user) {
+      if (user.is_paid === 0) setView('checkout');
+      else setView('dashboard');
+      return null;
+    }
+    return <LoginPage onBack={() => setView('landing')} onLogin={handleLoginSuccess} />;
   }
 
+  // --- Auth Guard for all remaining views ---
+  if (!user) {
+    setView('login');
+    return null;
+  }
+
+  // 3. Checkout Page (Only for logged in, unpaid users)
   if (view === 'checkout') {
+    if (user.is_paid === 1) {
+      setView('dashboard');
+      return null;
+    }
     return <CheckoutPage onBack={() => setView('landing')} onSuccess={() => setView('dashboard')} />;
   }
 
+  // --- Payment Guard for all remaining views (modules, dashboard, projects, etc) ---
+  if (user.is_paid === 0) {
+    setView('checkout');
+    return null;
+  }
+
+  // 4. Admin Panel
   if (view === 'admin' && user?.is_admin) {
     return <AdminPanel onBack={() => setView('dashboard')} />;
   }
 
+  // 5. Projects View
   if (view === 'projects') {
     const projects = [
       { 

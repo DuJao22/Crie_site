@@ -36,10 +36,13 @@ export default function AdminPanel({ onBack }: AdminPanelProps) {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/users');
+      const res = await fetch('/api/admin/users', { credentials: 'include' });
       if (res.ok) {
-        const data = await res.json();
-        setUsers(data);
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await res.json();
+          setUsers(data);
+        }
       }
     } catch (e) {
       console.error('Failed to fetch users', e);
@@ -54,7 +57,7 @@ export default function AdminPanel({ onBack }: AdminPanelProps) {
 
   const togglePaidStatus = async (id: number) => {
     try {
-      const res = await fetch(`/api/admin/users/${id}/toggle-paid`, { method: 'POST' });
+      const res = await fetch(`/api/admin/users/${id}/toggle-paid`, { method: 'POST', credentials: 'include' });
       if (res.ok) {
         setUsers(users.map(u => u.id === id ? { ...u, is_paid: u.is_paid ? 0 : 1 } : u));
       }
@@ -66,7 +69,7 @@ export default function AdminPanel({ onBack }: AdminPanelProps) {
   const deleteUser = async (id: number) => {
     if (!window.confirm('Tem certeza que deseja excluir este usuário?')) return;
     try {
-      const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/admin/users/${id}`, { method: 'DELETE', credentials: 'include' });
       if (res.ok) {
         setUsers(users.filter(u => u.id !== id));
       }
