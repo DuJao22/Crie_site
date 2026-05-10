@@ -28,6 +28,7 @@ export default function CheckoutPage({ onBack, onSuccess }: CheckoutPageProps) {
       const response = await fetch('/api/checkout/create-preference', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
 
       const data = await response.json();

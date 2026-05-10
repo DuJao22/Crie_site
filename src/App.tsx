@@ -157,7 +157,7 @@ export default function App() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch('/api/auth/me');
+        const res = await fetch('/api/auth/me', { credentials: 'include' });
         if (res.ok) {
           const contentType = res.headers.get('content-type');
           if (contentType && contentType.includes('application/json')) {
@@ -417,7 +417,7 @@ Requisitos:
 
   const fetchProgress = async () => {
     try {
-      const res = await fetch('/api/progress');
+      const res = await fetch('/api/progress', { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         setCurrentStep(data.current_step || 0);
@@ -554,10 +554,22 @@ Requisitos:
              >
                <ChevronLeft size={16} /> Voltar ao Painel
              </button>
-             <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none">
-               Ideias de <span className="text-brand-purple">Projetos</span>
-             </h1>
-             <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Onde a teoria encontra o faturamento.</p>
+             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+                <div className="space-y-4">
+                  <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none">
+                    Ideias de <span className="text-brand-purple">Projetos</span>
+                  </h1>
+                  <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Onde a teoria encontra o faturamento.</p>
+                </div>
+                <a 
+                  href="https://bio.site/Joao_Layon_DS_Company" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="px-8 py-4 bg-brand-purple text-white font-black uppercase text-xs tracking-widest rounded-2xl hover:scale-105 transition-all shadow-xl shadow-brand-purple/20 flex items-center gap-2"
+                >
+                  <ExternalLink size={16} /> Ver Projetos Reais
+                </a>
+             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -852,7 +864,17 @@ Requisitos:
             {/* Middle: Modules List */}
             <div className="lg:w-2/5 md:pt-12 order-3 lg:order-2">
               <h2 className="text-2xl font-black uppercase tracking-tight mb-2">Módulos do Curso</h2>
-              <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mb-8">Aprenda na prática com projetos reais</p>
+              <div className="flex justify-between items-center mb-8">
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Aprenda na prática com projetos reais</p>
+                <a 
+                  href="https://bio.site/Joao_Layon_DS_Company" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[10px] font-black text-brand-purple hover:underline flex items-center gap-1 uppercase tracking-widest"
+                >
+                  Ver Reais <ExternalLink size={10} />
+                </a>
+              </div>
 
               <div className="space-y-4">
                 {moduleProgress.map((m, idx) => (
