@@ -1,7 +1,7 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
-import Database from "better-sqlite3";
+import { Database } from "@sqlitecloud/drivers";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
@@ -14,82 +14,120 @@ dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-for-dev-only";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-
 const MP_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+const CONNECTION_STRING = process.env.SQLITE_CLOUD_CONNECTION_STRING;
 
 const client = MP_ACCESS_TOKEN ? new MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN }) : null;
-const db = new Database(path.join(process.cwd(), "platform.db"));
 
-// --- Database Schema Setup ---
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    is_paid INTEGER DEFAULT 0,
-    is_admin INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  );
+// Initialize SQLite Cloud database
+// Note: We'll initialize it properly inside startServer after checking the connection string
+let db: Database | null = null;
 
-  CREATE TABLE IF NOT EXISTS sessions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    token TEXT NOT NULL,
-    expires_at DATETIME NOT NULL,
-    is_active INTEGER DEFAULT 1,
-    last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users (id)
-  );
+async function initDatabase() {
+  if (!CONNECTION_STRING) {
+    console.error("SQLITE_CLOUD_CONNECTION_STRING is missing in environment variables.");
+    process.exit(1);
+  }
 
-  CREATE TABLE IF NOT EXISTS progress (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER UNIQUE NOT NULL,
-    current_step INTEGER DEFAULT 0,
-    score INTEGER DEFAULT 0,
-    answers TEXT,
-    last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users (id)
-  );
-`);
-
-// Support for existing tables that might be missing these columns
-const tableInfo = db.prepare("PRAGMA table_info(users)").all() as any[];
-const columns = tableInfo.map(c => c.name);
-
-if (!columns.includes("is_paid")) {
-  db.exec("ALTER TABLE users ADD COLUMN is_paid INTEGER DEFAULT 0");
-  console.log("Added is_paid column to users table");
-}
-
-if (!columns.includes("is_admin")) {
-  db.exec("ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0");
-  console.log("Added is_admin column to users table");
-}
-
-// Bootstrap Admin
-console.log("Checking admin bootstrap...");
-if (ADMIN_EMAIL && ADMIN_PASSWORD) {
   try {
-    const existingAdmin = db.prepare("SELECT * FROM users WHERE email = ?").get(ADMIN_EMAIL);
-    if (!existingAdmin) {
-      const hashedPassword = bcrypt.hashSync(ADMIN_PASSWORD, 10);
-      db.prepare("INSERT INTO users (email, password, is_paid, is_admin) VALUES (?, ?, 1, 1)").run(ADMIN_EMAIL, hashedPassword);
-      console.log(`Admin user ${ADMIN_EMAIL} bootstrapped successfully.`);
-    } else {
-      console.log(`Admin user ${ADMIN_EMAIL} already exists, checking admin rights...`);
-      if (!(existingAdmin as any).is_admin) {
-        db.prepare("UPDATE users SET is_admin = 1, is_paid = 1 WHERE email = ?").run(ADMIN_EMAIL);
-        console.log(`Updated existing user ${ADMIN_EMAIL} to admin.`);
+    db = new Database(CONNECTION_STRING);
+    console.log("Connecting to SQLite Cloud...");
+    
+    // Testing connection with a simple query
+    await db.sql`SELECT 1`;
+    console.log("SQLite Cloud connected successfully.");
+
+    // --- Database Schema Setup ---
+    await db.sql`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        is_paid INTEGER DEFAULT 0,
+        is_admin INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
+    await db.sql`
+      CREATE TABLE IF NOT EXISTS sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token TEXT NOT NULL,
+        expires_at DATETIME NOT NULL,
+        is_active INTEGER DEFAULT 1,
+        last_activity DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+      );
+    `;
+
+    await db.sql`
+      CREATE TABLE IF NOT EXISTS progress (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER UNIQUE NOT NULL,
+        current_step INTEGER DEFAULT 0,
+        score INTEGER DEFAULT 0,
+        answers TEXT,
+        last_updated DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id)
+      );
+    `;
+
+    // Support for existing tables that might be missing these columns
+    const tableInfo = await db.sql`PRAGMA table_info(users)` as any[];
+    const columns = tableInfo.map(c => c.name);
+
+    if (!columns.includes("is_paid")) {
+      await db.sql`ALTER TABLE users ADD COLUMN is_paid INTEGER DEFAULT 0`;
+      console.log("Added is_paid column to users table");
+    }
+
+    if (!columns.includes("is_admin")) {
+      await db.sql`ALTER TABLE users ADD COLUMN is_admin INTEGER DEFAULT 0`;
+      console.log("Added is_admin column to users table");
+    }
+
+    // Bootstrap Admin
+    console.log("Checking admin bootstrap...");
+    if (ADMIN_EMAIL && ADMIN_PASSWORD) {
+      const results = await db.sql`SELECT * FROM users WHERE email = ${ADMIN_EMAIL}`;
+      const existingAdmin = results[0];
+      
+      if (!existingAdmin) {
+        const hashedPassword = bcrypt.hashSync(ADMIN_PASSWORD, 10);
+        await db.sql`INSERT INTO users (email, password, is_paid, is_admin) VALUES (${ADMIN_EMAIL}, ${hashedPassword}, 1, 1)`;
+        console.log(`Admin user ${ADMIN_EMAIL} bootstrapped successfully.`);
+      } else {
+        console.log(`Admin user ${ADMIN_EMAIL} already exists, checking admin rights...`);
+        if (!existingAdmin.is_admin) {
+          await db.sql`UPDATE users SET is_admin = 1, is_paid = 1 WHERE email = ${ADMIN_EMAIL}`;
+          console.log(`Updated existing user ${ADMIN_EMAIL} to admin.`);
+        }
       }
     }
+
+    // --- Keep Alive Ping ---
+    // Pings the database every 10 minutes to prevent the free tier from sleeping
+    setInterval(async () => {
+      try {
+        if (db) {
+          await db.sql`SELECT 1`;
+          console.log(`[${new Date().toISOString()}] Database keep-alive ping successful.`);
+        }
+      } catch (e) {
+        console.error("Database keep-alive ping failed:", e);
+      }
+    }, 10 * 60 * 1000);
+
   } catch (error) {
-    console.error("Error during admin bootstrap:", error);
+    console.error("Failed to initialize SQLite Cloud database:", error);
+    process.exit(1);
   }
-} else {
-  console.log("Admin bootstrap skipped: ADMIN_EMAIL or ADMIN_PASSWORD not defined in env.");
 }
 
 async function startServer() {
+  await initDatabase();
+  
   const app = express();
   const PORT = process.env.PORT || 3000;
 
@@ -102,43 +140,55 @@ async function startServer() {
   app.use(express.json());
   app.use(cookieParser());
 
-  // Global logger for debugging
   app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
     next();
   });
 
+  // Helper for db access since db can be null (though unlikely after startServer awaits init)
+  const getDb = () => {
+    if (!db) throw new Error("Database not initialized");
+    return db;
+  };
+
   // --- Auth Middleware ---
-  const authenticateToken = (req: any, res: any, next: any) => {
+  const authenticateToken = async (req: any, res: any, next: any) => {
     const token = req.cookies.auth_token;
     if (!token) {
-      console.log(`Auth failed: No token found in cookies for ${req.path}`);
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    jwt.verify(token, JWT_SECRET, (err: any, user: any) => {
+    jwt.verify(token, JWT_SECRET, async (err: any, user: any) => {
       if (err) return res.status(403).json({ error: "Invalid token" });
       
-      // Verify session is still active in DB
-      const session = db.prepare("SELECT * FROM sessions WHERE token = ? AND is_active = 1").get(token) as any;
-      if (!session) return res.status(403).json({ error: "Session revoked or expired" });
+      try {
+        const sessions = await getDb().sql`SELECT * FROM sessions WHERE token = ${token} AND is_active = 1`;
+        const session = sessions[0];
+        if (!session) return res.status(403).json({ error: "Session revoked or expired" });
 
-      // Update last activity
-      db.prepare("UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = ?").run(session.id);
-      
-      req.user = user;
-      req.sessionId = session.id;
-      next();
+        await getDb().sql`UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = ${session.id}`;
+        
+        req.user = user;
+        req.sessionId = session.id;
+        next();
+      } catch (e) {
+        res.status(500).json({ error: "Internal server error" });
+      }
     });
   };
 
   const authenticateAdmin = (req: any, res: any, next: any) => {
-    authenticateToken(req, res, () => {
-      const user = db.prepare("SELECT is_admin FROM users WHERE id = ?").get(req.user.id) as any;
-      if (!user || !user.is_admin) {
-        return res.status(403).json({ error: "Access denied. Admin only." });
+    authenticateToken(req, res, async () => {
+      try {
+        const users = await getDb().sql`SELECT is_admin FROM users WHERE id = ${req.user.id}`;
+        const user = users[0];
+        if (!user || !user.is_admin) {
+          return res.status(403).json({ error: "Access denied. Admin only." });
+        }
+        next();
+      } catch (e) {
+        res.status(500).json({ error: "Internal server error" });
       }
-      next();
     });
   };
 
@@ -148,30 +198,41 @@ async function startServer() {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
   });
 
-  // Admin Routes
-  app.get("/api/admin/users", authenticateAdmin, (req, res) => {
-    const users = db.prepare("SELECT id, email, is_paid, is_admin, created_at FROM users ORDER BY created_at DESC").all();
-    res.json(users);
+  app.get("/api/admin/users", authenticateAdmin, async (req, res) => {
+    try {
+      const users = await getDb().sql`SELECT id, email, is_paid, is_admin, created_at FROM users ORDER BY created_at DESC`;
+      res.json(users);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
   });
 
-  app.post("/api/admin/users/:id/toggle-paid", authenticateAdmin, (req, res) => {
+  app.post("/api/admin/users/:id/toggle-paid", authenticateAdmin, async (req, res) => {
     const { id } = req.params;
-    const user = db.prepare("SELECT is_paid FROM users WHERE id = ?").get(id) as any;
-    if (!user) return res.status(404).json({ error: "User not found" });
+    try {
+      const results = await getDb().sql`SELECT is_paid FROM users WHERE id = ${id}`;
+      const user = results[0];
+      if (!user) return res.status(404).json({ error: "User not found" });
 
-    const newStatus = user.is_paid ? 0 : 1;
-    db.prepare("UPDATE users SET is_paid = ? WHERE id = ?").run(newStatus, id);
-    res.json({ message: "Status updated", is_paid: newStatus });
+      const newStatus = user.is_paid ? 0 : 1;
+      await getDb().sql`UPDATE users SET is_paid = ${newStatus} WHERE id = ${id}`;
+      res.json({ message: "Status updated", is_paid: newStatus });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to update user" });
+    }
   });
 
-  app.delete("/api/admin/users/:id", authenticateAdmin, (req, res) => {
+  app.delete("/api/admin/users/:id", authenticateAdmin, async (req, res) => {
     const { id } = req.params;
-    db.prepare("DELETE FROM sessions WHERE user_id = ?").run(id);
-    db.prepare("DELETE FROM users WHERE id = ?").run(id);
-    res.json({ message: "User deleted" });
+    try {
+      await getDb().sql`DELETE FROM sessions WHERE user_id = ${id}`;
+      await getDb().sql`DELETE FROM users WHERE id = ${id}`;
+      res.json({ message: "User deleted" });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to delete user" });
+    }
   });
 
-  // 1. Initial Admin/User Registration
   app.post("/api/auth/register", async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) {
@@ -180,16 +241,16 @@ async function startServer() {
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const info = db.prepare("INSERT INTO users (email, password) VALUES (?, ?)").run(email, hashedPassword);
+      // SQLite Cloud might return metadata about the insert
+      await getDb().sql`INSERT INTO users (email, password) VALUES (${email}, ${hashedPassword})`;
       
-      const userId = info.lastInsertRowid;
-      const user = { id: userId, email, is_admin: 0, is_paid: 0 };
+      const userResults = await getDb().sql`SELECT id FROM users WHERE email = ${email}`;
+      const user = userResults[0];
       
-      // Auto login after registration
-      const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "24h" });
+      const token = jwt.sign({ id: user.id, email: email }, JWT_SECRET, { expiresIn: "24h" });
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-      db.prepare("INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)").run(user.id, token, expiresAt);
+      await getDb().sql`INSERT INTO sessions (user_id, token, expires_at) VALUES (${user.id}, ${token}, ${expiresAt})`;
 
       res.cookie("auth_token", token, {
         httpOnly: true,
@@ -198,107 +259,115 @@ async function startServer() {
         maxAge: 24 * 60 * 60 * 1000,
       });
 
-      console.log(`User registered and logged in: ${email}`);
-      res.status(201).json({ message: "User created", user: { email: user.email, is_admin: 0, is_paid: 0 } });
+      res.status(201).json({ message: "User created", user: { email, is_admin: 0, is_paid: 0 } });
     } catch (error: any) {
-      if (error.message.includes("UNIQUE constraint failed")) {
+      if (error.message && error.message.includes("UNIQUE constraint failed")) {
         return res.status(400).json({ error: "Email already registered" });
       }
-      console.error("Registration error:", error);
       res.status(500).json({ error: "Internal server error during registration" });
     }
   });
 
-  // 2. Login with Single Session enforcement (simplified to prevent 403 confusion)
   app.post("/api/auth/login", async (req, res) => {
-    console.log(`Login attempt for: ${req.body.email}`);
     const { email, password } = req.body;
-    
     if (!email || !password) {
       return res.status(400).json({ error: "Email and password are required" });
     }
 
     try {
-      const user = db.prepare("SELECT * FROM users WHERE email = ?").get(email) as any;
+      const results = await getDb().sql`SELECT * FROM users WHERE email = ${email}`;
+      const user = results[0];
 
       if (!user || !(await bcrypt.compare(password, user.password))) {
-        console.log(`Login failed for ${email}: Invalid credentials`);
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
-      // Automatically invalidate previous sessions to avoid "Already Online" 403s
-      db.prepare("UPDATE sessions SET is_active = 0 WHERE user_id = ?").run(user.id);
+      await getDb().sql`UPDATE sessions SET is_active = 0 WHERE user_id = ${user.id}`;
 
       const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "24h" });
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-      db.prepare("INSERT INTO sessions (user_id, token, expires_at) VALUES (?, ?, ?)").run(user.id, token, expiresAt);
+      await getDb().sql`INSERT INTO sessions (user_id, token, expires_at) VALUES (${user.id}, ${token}, ${expiresAt})`;
 
       res.cookie("auth_token", token, {
         httpOnly: true,
-        secure: true, // Force secure in this environment
-        sameSite: "none", // Better for iframe environments
+        secure: true,
+        sameSite: "none",
         maxAge: 24 * 60 * 60 * 1000,
       });
 
-      console.log(`Login success for ${email}`);
       res.json({ message: "Logged in", user: { email: user.email, is_admin: user.is_admin, is_paid: user.is_paid } });
     } catch (error) {
-      console.error("Login error:", error);
       res.status(500).json({ error: "Internal server error during login" });
     }
   });
 
-  // 3. Logout
-  app.post("/api/auth/logout", authenticateToken, (req: any, res) => {
-    db.prepare("UPDATE sessions SET is_active = 0 WHERE id = ?").run(req.sessionId);
-    res.clearCookie("auth_token");
-    res.json({ message: "Logged out" });
-  });
-
-  // 4. Me (Session Check)
-  app.get("/api/auth/me", authenticateToken, (req: any, res) => {
-    const user = db.prepare("SELECT id, email, is_paid, is_admin FROM users WHERE id = ?").get(req.user.id) as any;
-    res.json({ user });
-  });
-
-  // 4b. Progress Routes
-  app.get("/api/progress", authenticateToken, (req: any, res) => {
-    const progress = db.prepare("SELECT * FROM progress WHERE user_id = ?").get(req.user.id) as any;
-    if (progress) {
-      res.json({
-        ...progress,
-        answers: progress.answers ? JSON.parse(progress.answers) : []
-      });
-    } else {
-      res.json({ current_step: 0, score: 0, answers: [] });
+  app.post("/api/auth/logout", authenticateToken, async (req: any, res) => {
+    try {
+      await getDb().sql`UPDATE sessions SET is_active = 0 WHERE id = ${req.sessionId}`;
+      res.clearCookie("auth_token");
+      res.json({ message: "Logged out" });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to logout" });
     }
   });
 
-  app.post("/api/progress", authenticateToken, (req: any, res) => {
+  app.get("/api/auth/me", authenticateToken, async (req: any, res) => {
+    try {
+      const results = await getDb().sql`SELECT id, email, is_paid, is_admin FROM users WHERE id = ${req.user.id}`;
+      const user = results[0];
+      res.json({ user });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to fetch user data" });
+    }
+  });
+
+  app.get("/api/progress", authenticateToken, async (req: any, res) => {
+    try {
+      const results = await getDb().sql`SELECT * FROM progress WHERE user_id = ${req.user.id}`;
+      const progress = results[0];
+      if (progress) {
+        res.json({
+          ...progress,
+          answers: progress.answers ? JSON.parse(progress.answers) : []
+        });
+      } else {
+        res.json({ current_step: 0, score: 0, answers: [] });
+      }
+    } catch (e) {
+      res.status(500).json({ error: "Failed to fetch progress" });
+    }
+  });
+
+  app.post("/api/progress", authenticateToken, async (req: any, res) => {
     const { current_step, score, answers } = req.body;
     const userId = req.user.id;
     const answersStr = JSON.stringify(answers || []);
 
     try {
-      db.prepare(`
-        INSERT INTO progress (user_id, current_step, score, answers, last_updated) 
-        VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-        ON CONFLICT(user_id) DO UPDATE SET
-          current_step = excluded.current_step,
-          score = excluded.score,
-          answers = excluded.answers,
-          last_updated = CURRENT_TIMESTAMP
-      `).run(userId, current_step || 0, score || 0, answersStr);
-      
+      // Manual UPSERT for SQLite flavors that might not support ON CONFLICT yet or just to be safe
+      const existing = await getDb().sql`SELECT id FROM progress WHERE user_id = ${userId}`;
+      if (existing.length > 0) {
+        await getDb().sql`
+          UPDATE progress SET 
+            current_step = ${current_step || 0}, 
+            score = ${score || 0}, 
+            answers = ${answersStr}, 
+            last_updated = CURRENT_TIMESTAMP 
+          WHERE user_id = ${userId}
+        `;
+      } else {
+        await getDb().sql`
+          INSERT INTO progress (user_id, current_step, score, answers, last_updated) 
+          VALUES (${userId}, ${current_step || 0}, ${score || 0}, ${answersStr}, CURRENT_TIMESTAMP)
+        `;
+      }
       res.json({ message: "Progress saved" });
     } catch (error) {
-      console.error("Error saving progress:", error);
       res.status(500).json({ error: "Failed to save progress" });
     }
   });
 
-  // 5. Mercado Pago Checkout
   const createPreferenceHandler = async (req: any, res: any) => {
     if (!client) {
       return res.status(500).json({ error: "Mercado Pago not configured on server" });
@@ -309,8 +378,6 @@ async function startServer() {
       const protocol = host.includes('localhost') ? 'http' : 'https';
       const baseUrl = `${protocol}://${host}`;
       
-      console.log(`MP Preference Attempt: baseUrl=${baseUrl}`);
-
       const preference = new Preference(client);
       const body = {
         items: [
@@ -335,16 +402,9 @@ async function startServer() {
         binary_mode: true,
       };
 
-      console.log('MP Preference Body Sent:', JSON.stringify(body, null, 2));
-
       const result = await preference.create({ body });
-
       res.json({ id: result.id, init_point: result.init_point });
     } catch (error: any) {
-      console.error('MP Preference Error Detail:', error.message || error);
-      if (error.response) {
-        console.error('MP Response Error:', JSON.stringify(error.response, null, 2));
-      }
       res.status(500).json({ error: "Failed to create payment preference", details: error.message });
     }
   };
@@ -352,23 +412,24 @@ async function startServer() {
   app.post("/api/checkout/create-preference", authenticateToken, createPreferenceHandler);
   app.get("/api/checkout/create-preference", authenticateToken, createPreferenceHandler);
 
-  // 6. Payment Verification (Simplified for this setup)
-  app.get("/api/checkout/verify", authenticateToken, (req: any, res) => {
+  app.get("/api/checkout/verify", authenticateToken, async (req: any, res) => {
     const status = req.query.status || req.query.collection_status;
     if (status === 'success' || status === 'approved') {
-      db.prepare("UPDATE users SET is_paid = 1 WHERE id = ?").run(req.user.id);
-      res.redirect('/dashboard?payment_confirmed=true');
+      try {
+        await getDb().sql`UPDATE users SET is_paid = 1 WHERE id = ${req.user.id}`;
+        res.redirect('/dashboard?payment_confirmed=true');
+      } catch (e) {
+        res.redirect('/dashboard?payment_error=true');
+      }
     } else {
       res.redirect('/dashboard?payment_failed=true');
     }
   });
 
-  // Handle 404 for API routes to avoid returning HTML
   app.all("/api/*", (req, res) => {
     res.status(404).json({ error: "API endpoint not found", path: req.originalUrl });
   });
 
-  // --- Error Handling ---
   app.use((err: any, req: any, res: any, next: any) => {
     console.error('Server Error:', err);
     res.status(500).json({ 
@@ -378,7 +439,6 @@ async function startServer() {
     });
   });
 
-  // --- Vite & Production Setup ---
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
