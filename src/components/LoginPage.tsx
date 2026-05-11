@@ -69,7 +69,7 @@ export default function LoginPage({ onBack, onLogin, initialMode = 'login' }: Lo
         </div>
         
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center font-black italic text-brand-purple text-2xl">DS</div>
+          <img src="https://i.postimg.cc/kgmY092W/image-removebg-preview-(20).png" alt="DS Company Logo" className="w-12 h-12 object-contain brightness-0 invert" />
           <span className="font-black uppercase tracking-tighter text-3xl text-black">Company</span>
         </div>
 

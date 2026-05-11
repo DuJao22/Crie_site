@@ -235,11 +235,7 @@ function DashboardView({ user, modules, setView, setActiveModule, handleLogout, 
                 const lastUnlocked = [...modules].reverse().find(m => !m.locked);
                 if (lastUnlocked) {
                   setActiveModule(lastUnlocked);
-                  if (lastUnlocked.passed) {
-                    setView('lesson');
-                  } else {
-                    setView('quiz');
-                  }
+                  setView('lesson');
                 }
               }}
               className="mt-4 px-10 py-5 bg-gradient-to-r from-brand-purple to-brand-pink text-white font-black uppercase text-sm tracking-widest rounded-3xl hover:opacity-90 transition-all flex items-center justify-center gap-4 w-full md:w-fit shadow-[0_20px_40px_rgba(99,102,241,0.2)] group"
@@ -257,11 +253,7 @@ function DashboardView({ user, modules, setView, setActiveModule, handleLogout, 
                    onClick={() => {
                      if (m.locked) return;
                      setActiveModule(m);
-                     if (m.passed) {
-                       setView('lesson');
-                     } else {
-                       setView('quiz');
-                     }
+                     setView('lesson');
                    }}
                    className={`rounded-[40px] bg-white/5 border border-white/10 transition-all group flex flex-col relative overflow-hidden ${m.locked ? 'opacity-40 cursor-not-allowed' : 'hover:bg-white/[0.08] active:scale-[0.98] cursor-pointer'}`}
                  >
@@ -863,7 +855,7 @@ Requisitos:
                    <div className="hidden sm:block text-right">
                      <p className="text-[10px] font-black uppercase text-brand-purple tracking-widest">{activeModule.title}</p>
                    </div>
-                   <div className="w-6 h-6 bg-brand-purple rounded flex items-center justify-center font-black italic text-black text-xs">DS</div>
+                   <img src="https://i.postimg.cc/kgmY092W/image-removebg-preview-(20).png" alt="Logo" className="w-8 h-8 object-contain" />
                  </div>
                </nav>
                
@@ -888,15 +880,26 @@ Requisitos:
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 pt-12 border-t border-white/5">
-                       <div className="flex-1 p-8 rounded-[32px] bg-white/5 border border-white/5">
-                          <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Status do Módulo</p>
-                          <div className="flex items-center gap-2 text-brand-green font-black uppercase">
-                            <CheckCircle2 size={16} /> Conteúdo Concluído
+                       <div className="flex-1 p-8 rounded-[32px] bg-white/5 border border-white/5 flex items-center justify-between">
+                          <div>
+                            <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest mb-2">Status do Módulo</p>
+                            <div className={`flex items-center gap-2 font-black uppercase ${activeModule.passed ? 'text-brand-green' : 'text-yellow-500'}`}>
+                              {activeModule.passed ? <CheckCircle2 size={16} /> : <Zap size={16} />}
+                              {activeModule.passed ? 'Certificado Obtido' : 'Avaliação Pendente'}
+                            </div>
                           </div>
+                          {!activeModule.passed && (
+                            <button 
+                              onClick={() => setView('quiz')}
+                              className="px-6 py-4 bg-brand-purple text-white font-black uppercase text-[10px] rounded-2xl hover:opacity-90 transition-all"
+                            >
+                              Fazer Questionário
+                            </button>
+                          )}
                        </div>
                        <button 
                          onClick={() => setView('dashboard')}
-                         className="px-12 py-8 bg-white text-black font-black uppercase tracking-widest text-sm rounded-[32px] hover:bg-brand-purple hover:text-white transition-all shadow-xl"
+                         className="px-12 py-8 bg-white/5 border border-white/10 text-white font-black uppercase tracking-widest text-sm rounded-[32px] hover:bg-white hover:text-black transition-all"
                        >
                          Voltar ao Painel
                        </button>

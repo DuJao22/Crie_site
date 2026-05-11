@@ -39,8 +39,8 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
 
       {/* Navbar mimic */}
       <nav className="p-6 flex justify-between items-center max-w-7xl mx-auto border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-brand-purple rounded-lg flex items-center justify-center font-black italic text-black">DS</div>
+        <div className="flex items-center gap-3">
+          <img src="https://i.postimg.cc/kgmY092W/image-removebg-preview-(20).png" alt="DS Company Logo" className="w-10 h-10 object-contain" />
           <span className="font-black uppercase tracking-tighter text-xl">Company</span>
         </div>
         <div className="flex gap-2 md:gap-4">
@@ -216,9 +216,9 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
       {/* Footer mimic */}
       <footer className="p-20 border-t border-white/5 text-center">
         <div className="flex flex-col items-center gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center font-black italic text-white/40">DS</div>
-            <span className="font-black uppercase tracking-tighter text-xl text-white/40">Company</span>
+          <div className="flex items-center gap-3 grayscale opacity-40">
+            <img src="https://i.postimg.cc/kgmY092W/image-removebg-preview-(20).png" alt="DS Company Logo" className="w-8 h-8 object-contain" />
+            <span className="font-black uppercase tracking-tighter text-xl">Company</span>
           </div>
           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">© {new Date().getFullYear()} ds Company • Todos os direitos reservados</p>
         </div>
