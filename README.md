@@ -1,6 +1,6 @@
-# DS Company: Master IA & SaaS
+# Landing Pages com IA — Engenharia de Prompt
 
-Este projeto é uma plataforma de ensino para criação de sites e SaaS utilizando Inteligência Artificial.
+Este projeto é uma plataforma de ensino para criação de landing pages profissionais utilizando Inteligência Artificial e Engenharia de Prompt.
 
 ## Como fazer o Deploy no Render.com
 

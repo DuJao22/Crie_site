@@ -82,56 +82,149 @@ async function initDatabase() {
       );
     `;
 
-    // Bootstrap Initial Modules for the New SaaS Course
+    await db.sql`
+      CREATE TABLE IF NOT EXISTS questions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        module_id INTEGER NOT NULL,
+        question TEXT NOT NULL,
+        options TEXT NOT NULL,
+        correct_option INTEGER NOT NULL,
+        FOREIGN KEY (module_id) REFERENCES modules (id)
+      );
+    `;
+
+    await db.sql`
+      CREATE TABLE IF NOT EXISTS quiz_results (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        module_id INTEGER NOT NULL,
+        score INTEGER NOT NULL,
+        passed INTEGER DEFAULT 0,
+        completed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users (id),
+        FOREIGN KEY (module_id) REFERENCES modules (id)
+      );
+    `;
+
+    // Bootstrap Initial Modules for the New Landing Page Course
     const existingModules = await db.sql`SELECT COUNT(*) as count FROM modules`;
-    if ((existingModules[0] as any).count === 0) {
-      console.log("Bootstrapping 15 course modules...");
+    // Force replacement with the exact 15 modules curriculum (12 modules + 3 bonuses)
+    if ((existingModules[0] as any).count !== 15) {
+      console.log("Replacing course modules with new 15-module curriculum (12 modules + 3 bonuses)...");
+      try {
+        await db.sql`DELETE FROM quiz_results`;
+        await db.sql`DELETE FROM questions`;
+        await db.sql`DELETE FROM modules`;
+      } catch (e) {
+        console.log("Tables might not exist yet or empty.");
+      }
+
       const courseModules = [
         { 
-          title: "Módulo 1: Preparando Ambiente", 
-          desc: "Ferramentas essenciais: GitHub, app.new, Render e VS Code.", 
-          img: "https://images.unsplash.com/photo-1587620962725-abab7fe55159?q=80&w=800&auto=format&fit=crop",
-          content: "Ferramentas Necessárias:\n- GitHub: Salvar código\n- app.new: Criar sistema com IA\n- Render: Hospedagem grátis\n- VS Code: Editar código",
-          free: 1 
-        },
-        { 
-          title: "Módulo 2: Criando Conta no GitHub", 
-          desc: "Passo a passo para configurar seu repositório remoto.", 
-          img: "https://images.unsplash.com/photo-1618401471353-b98aade1229a?q=80&w=800&auto=format&fit=crop",
-          content: "O GitHub será onde o código do Mini SaaS ficará salvo.\n\nPassos:\n1. Acesse github.com\n2. Clique em Sign Up\n3. Confirme seu email.",
-          free: 1 
-        },
-        { 
-          title: "Módulo 3: Criando Conta no app.new", 
-          desc: "Acesso à plataforma de IA para geração de apps.", 
+          title: "MÓDULO 1 — Introdução à Engenharia de Prompt", 
+          desc: "Explica o que é engenharia de prompt e como IA entende comandos.", 
           img: "https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=800&auto=format&fit=crop",
-          content: "Acesse app.new e faça login com seu Google ou GitHub para começar a usar a IA.",
+          content: "🎯 Objetivo: Explicar o que é engenharia de prompt e como IA entende comandos.\n\n📚 Aulas:\nAula 1 — O que é Engenharia de Prompt\nAula 2 — Como IA Cria Landing Pages\nAula 3 — Ferramentas Necessárias (GitHub, Lovable, Bolt.new, v0, Vercel)",
           free: 1 
         },
         { 
-          title: "Módulo 4: Estrutura Profissional do SaaS", 
-          desc: "Aprenda sobre Frontend, Backend, Banco de Dados e API.", 
+          title: "MÓDULO 2 — Estrutura de uma Landing Page Profissional", 
+          desc: "Ensinar a estrutura correta de uma landing page e gatilhos de conversão.", 
           img: "https://images.unsplash.com/photo-1551288049-bbbda536ad37?q=80&w=800&auto=format&fit=crop",
-          content: "Estrutura Ideal:\n- Sistema de Usuários\n- Dashboard Moderno\n- Banco de Dados (SQLite)\n- Painel Admin",
+          content: "🎯 Objetivo: Ensinar a estrutura correta de uma landing page.\n\n📚 Aulas:\nAula 1 — Anatomia de uma Landing Page (Hero, CTA, Benefícios, FAQ...)\nAula 2 — Psicologia de Conversão (Gatilhos mentais, escassez, autoridade)\nAula 3 — Design que Converte (Hierarquia visual, espaçamento, UX/UI)",
+          free: 1 
+        },
+        { 
+          title: "MÓDULO 3 — Criando Prompts Profissionais", 
+          desc: "Ensinar prompts detalhados para gerar páginas melhores por nicho.", 
+          img: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=800&auto=format&fit=crop",
+          content: "🎯 Objetivo: Ensinar prompts detalhados para gerar páginas melhores.\n\n📚 Aulas:\nAula 1 — Estrutura de Prompt Profissional\nAula 2 — Prompt Básico vs Avançado\nAula 3 — Prompts Estruturados (Barbearia, Restaurante, Agência, SaaS...)",
+          free: 1 
+        },
+        { 
+          title: "MÓDULO 4 — Criando Landing Pages com IA", 
+          desc: "Ensinar geração prática usando a ferramenta Lovable.", 
+          img: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=800&auto=format&fit=crop",
+          content: "🎯 Objetivo: Ensinar geração prática.\n\n📚 Aulas:\nAula 1 — Criando Conta e Integração GitHub\nAula 2 — Gerando Primeira Página\nAula 3 — Refinando Resultado",
           free: 0 
         },
         { 
-          title: "Módulo 5: Criando o Mini SaaS com IA", 
-          desc: "O prompt definitivo para gerar um sistema completo.", 
-          img: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=800&auto=format&fit=crop",
-          content: "Prompt Profissional:\n'Crie um Mini SaaS profissional usando Flask, SQLite3, HTML, CSS e Jinja2...'",
+          title: "MÓDULO 5 — Estrutura Visual Premium", 
+          desc: "Criar páginas modernas com design premium e responsividade.", 
+          img: "https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=800&auto=format&fit=crop",
+          content: "🎯 Objetivo: Criar páginas modernas.\n\n📚 Aulas:\nAula 1 — Design Premium (Glassmorphism, Gradientes, Sombras)\nAula 2 — Dark Mode\nAula 3 — Responsividade (Mobile First)",
           free: 0 
         },
-        { title: "Módulo 6: Entendendo a Estrutura", desc: "Análise das pastas e arquivos gerados pela IA.", img: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=800", content: "Entenda templates, static, routes e database.", free: 0 },
-        { title: "Módulo 7: Melhorando o SaaS com IA", desc: "Prompts para Dark Mode, Responsividade e Design Premium.", img: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=800", content: "A evoluçao do sistema através de novos prompts.", free: 0 },
-        { title: "Módulo 8: Banco de Dados SQLite3", desc: "Salvando usuários, logs e planos.", img: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?q=80&w=800", content: "id, nome, email, senha e created_at.", free: 0 },
-        { title: "Módulo 9: Integração com GitHub", desc: "Conectando o app.new ao GitHub para deploys.", img: "https://images.unsplash.com/photo-1556075798-4825dfabb46e?q=80&w=800", content: "git init, add e commit automático.", free: 0 },
-        { title: "Módulo 10: Hospedagem no Render", desc: "Colocando seu sistema online definitivamente.", img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800", content: "Configurando Build e Start commands.", free: 0 },
-        { title: "Módulo 11: Estrutura Visual", desc: "Glassmorphism, gradientes e dashboard premium.", img: "https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=800", content: "Design moderno estilo startup.", free: 0 },
-        { title: "Módulo 12: Estrutura REAL de SaaS", desc: "Tornando sua aplicação escalável.", img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800", content: "Flask, APIs e Segurança.", free: 0 },
-        { title: "Módulo 13: Melhorias Futuras", desc: "Stripe, Mercado Pago e integração com OpenAI.", img: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=800", content: "Evoluindo seu produto digital.", free: 0 },
-        { title: "Módulo 14: Monetização", desc: "Como e onde vender seu Mini SaaS por nichos.", img: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?q=80&w=800", content: "Precificação e Nichos lucrativos.", free: 0 },
-        { title: "Módulo 15: Encerramento", desc: "Parabéns! Você concluiu seu primeiro SaaS.", img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800", content: "Finalização e próximos passos na jornada IA.", free: 0 },
+        { 
+          title: "MÓDULO 6 — IA + Copywriting", 
+          desc: "Ensinar a criar headlines e CTAs que realmente vendem.", 
+          img: "https://images.unsplash.com/photo-1455849318743-b2233052fcff?q=80&w=800&auto=format&fit=crop",
+          content: "🎯 Objetivo: Ensinar páginas que vendem.\n\n📚 Aulas:\nAula 1 — Headlines Fortes\nAula 2 — CTA Profissional\nAula 3 — Estrutura de Conversão (Problema-Solução-Benefício)",
+          free: 0 
+        },
+        { 
+          title: "MÓDULO 7 — GitHub", 
+          desc: "Salvar e versionar seus projetos de forma profissional.", 
+          img: "https://images.unsplash.com/photo-1618401471353-b98aade1229a?q=80&w=800&auto=format&fit=crop",
+          content: "🎯 Objetivo: Salvar projetos profissionalmente.\n\n📚 Aulas:\nAula 1 — Criando Conta GitHub\nAula 2 — Repositórios (commits, push, versionamento)\nAula 3 — Integração IA + GitHub",
+          free: 0 
+        },
+        { 
+          title: "MÓDULO 8 — Hospedagem Grátis", 
+          desc: "Publicar suas páginas online e configurar domínios.", 
+          img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop",
+          content: "🎯 Objetivo: Publicar páginas online.\n\n📚 Aulas:\nAula 1 — Deploy na Vercel\nAula 2 — Domínio (grátis e personalizado)\nAula 3 — Atualizações Automáticas",
+          free: 0 
+        },
+        { 
+          title: "MÓDULO 9 — Landing Pages Avançadas", 
+          desc: "Criação de páginas para nichos específicos e fluxos de venda.", 
+          img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop",
+          content: "🎯 Objetivo: Criar páginas mais profissionais.\n\n📚 Aulas:\nAula 1 — Landing Page SaaS\nAula 2 — Página de Produto\nAula 3 — Página de Captura\nAula 4 — Página de Checkout",
+          free: 0 
+        },
+        { 
+          title: "MÓDULO 10 — Estrutura Freelancer", 
+          desc: "Como vender seus serviços, precificar e escalar sua produção.", 
+          img: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?q=80&w=800&auto=format&fit=crop",
+          content: "🎯 Objetivo: Ensinar monetização.\n\n📚 Aulas:\nAula 1 — Como Vender Landing Pages\nAula 2 — Precificação\nAula 3 — Escalando com IA",
+          free: 0 
+        },
+        { 
+          title: "MÓDULO 11 — Prompts Premium", 
+          desc: "Prompts extremamente profissionais para resultados de alto nível.", 
+          img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop",
+          content: "🎯 Objetivo: Criar prompts extremamente profissionais.\n\n📚 Aulas:\nAula 1 — Estrutura Master Prompt\nAula 2 — Prompt para Conversão\nAula 3 — Prompt para SaaS\nAula 4 — Prompt para E-commerce",
+          free: 0 
+        },
+        { 
+          title: "MÓDULO 12 — Projeto Final", 
+          desc: "Construção de uma LP Premium completa do zero ao deploy.", 
+          img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop",
+          content: "🎯 Objetivo: Criar projeto completo.\n\n📚 Projeto:\nLanding Page Premium Completa com Hero, CTA, FAQ, Depoimentos e Responsividade Total.",
+          free: 0 
+        },
+        { 
+          title: "BÔNUS 1 — Biblioteca de Prompts", 
+          desc: "Mais de 100 prompts prontos para acelerar sua vida.", 
+          img: "https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?q=80&w=800&auto=format&fit=crop",
+          content: "🚀 100 prompts prontos para diversos nichos e necessidades.",
+          free: 0 
+        },
+        { 
+          title: "BÔNUS 2 — Templates Premium", 
+          desc: "Estruturas verificadas que você pode clonar.", 
+          img: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?q=80&w=800&auto=format&fit=crop",
+          content: "🚀 Landing pages prontas para você usar como base nos seus projetos.",
+          free: 0 
+        },
+        { 
+          title: "BÔNUS 3 — Estrutura Agência", 
+          desc: "Modelos de negócio para vender Landing Pages recorrentemente.", 
+          img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop",
+          content: "🚀 Como vender serviços, gerir clientes e escalar sua própria agência.",
+          free: 0 
+        },
       ];
 
       for (let i = 0; i < courseModules.length; i++) {
@@ -150,6 +243,7 @@ async function initDatabase() {
         }
       }
     }
+
 
     // Support for existing tables that might be missing these columns
     const tableInfo = await db.sql`PRAGMA table_info(users)` as any[];

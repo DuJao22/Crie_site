@@ -69,8 +69,8 @@ export default function LoginPage({ onBack, onLogin, initialMode = 'login' }: Lo
         </div>
         
         <div className="relative z-10 flex items-center gap-3">
-          <img src="https://i.postimg.cc/kgmY092W/image-removebg-preview-(20).png" alt="DS Company Logo" className="w-12 h-12 object-contain brightness-0 invert" />
-          <span className="font-black uppercase tracking-tighter text-3xl text-black">Company</span>
+          <img src="https://i.postimg.cc/kgmY092W/image-removebg-preview-(20).png" alt="Logo" className="w-12 h-12 object-contain brightness-0 invert" />
+          <span className="font-black uppercase tracking-tighter text-3xl text-black">LP Master</span>
         </div>
 
         <div className="relative z-10 max-w-lg space-y-6">
@@ -87,7 +87,7 @@ export default function LoginPage({ onBack, onLogin, initialMode = 'login' }: Lo
               <Layout size={24} />
            </div>
            <p className="text-[10px] font-black uppercase tracking-widest text-black/50 italic leading-tight">
-             Plataforma exclusiva <br /> para alunos da ds Company.
+             Plataforma de Alunos <br /> Landing Page Master.
            </p>
         </div>
       </div>

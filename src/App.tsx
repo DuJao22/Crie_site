@@ -38,7 +38,9 @@ import {
   CheckSquare,
   Layout,
   Menu,
-  X
+  X,
+  Zap,
+  ShieldCheck
 } from 'lucide-react';
 
 import LandingPage from './components/LandingPage';
@@ -48,95 +50,13 @@ import QuizView from './components/QuizView';
 
 // --- Constants & Types ---
 
-type Step = {
-  id: number;
-  title: string;
-  subtitle: string;
-  icon: ReactNode;
-  content: ReactNode;
-  color: string;
-};
-
 // --- Components ---
-
-const ProgressBar = ({ current, total }: { current: number; total: number }) => {
-  const progress = ((current + 1) / total) * 100;
-  return (
-    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden mb-8 relative">
-      <motion.div 
-        className="absolute top-0 left-0 h-full bg-blue-600"
-        initial={{ width: 0 }}
-        animate={{ width: `${progress}%` }}
-        transition={{ type: "spring", stiffness: 50, damping: 20 }}
-      />
-    </div>
-  );
-};
 
 const SuccessBadge = () => (
   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold uppercase tracking-wider">
     <CheckCircle2 size={12} /> Resultado
   </span>
 );
-
-type QuizQuestion = {
-  question: string;
-  options: string[];
-  correct: number;
-};
-
-const QUESTIONS: QuizQuestion[] = [
-  {
-    question: "O que é o GitHub na prática?",
-    options: ["Um editor de fotos online", "Uma rede social de vídeos", "Um 'Google Drive' para códigos na nuvem", "Um site de compras"],
-    correct: 2
-  },
-  {
-    question: "Qual o comando/ação usado para 'salvar' uma versão do código localmente?",
-    options: ["Push", "Commit", "Download", "Delete"],
-    correct: 1
-  },
-  {
-    question: "Para o site funcionar no ar, qual deve ser o nome do arquivo principal?",
-    options: ["home.html", "index.html", "site.php", "main.js"],
-    correct: 1
-  },
-  {
-    question: "O que o app.new faz com base em um prompt?",
-    options: ["Cria um logo", "Gera uma conta no banco", "Cria um site completo em HTML/CSS", "Envia emails"],
-    correct: 2
-  },
-  {
-    question: "Qual plataforma usamos para deixar o site online (Deploy)?",
-    options: ["Vercel", "Facebook", "WhatsApp", "Spotify"],
-    correct: 0
-  },
-  {
-    question: "O que é o 'Push' na integração Git?",
-    options: ["Apagar o projeto", "Enviar as alterações para o GitHub", "Baixar os arquivos", "Mudar o nome do autor"],
-    correct: 1
-  },
-  {
-    question: "Como você deve subir arquivos no GitHub se baixar um .zip?",
-    options: ["Sobe o .zip direto", "Renomeia para .png", "Descompacta e sobe os arquivos soltos", "Não precisa de arquivos"],
-    correct: 2
-  },
-  {
-    question: "Qual a principal vantagem de um Mini SaaS?",
-    options: ["É muito complexo", "Resolve um problema específico rapidamente", "Não precisa de internet", "É gratuito para sempre"],
-    correct: 1
-  },
-  {
-    question: "Para conectar Vercel ao GitHub, o que é necessário?",
-    options: ["Pagar uma taxa", "Autorizar o acesso aos repositórios", "Enviar um pendrive por correio", "Saber falar inglês fluido"],
-    correct: 1
-  },
-  {
-    question: "O que é o 'Prompt' no contexto de IA?",
-    options: ["Um vírus", "Uma senha secreta", "A instrução em texto que guia a IA", "O nome do computador"],
-    correct: 2
-  }
-];
 
 // --- Navigation Config ---
 
@@ -218,23 +138,23 @@ function DashboardView({ user, modules, setView, setActiveModule, handleLogout, 
           
           <div className="lg:w-2/5 flex flex-col justify-center gap-6 md:gap-8">
             <span className="inline-block px-4 py-1.5 bg-brand-purple/20 text-brand-purple rounded-full text-[10px] font-black uppercase tracking-widest border border-brand-purple/30 w-fit">
-              Ecossistema DS
+              Landing Page Master
             </span>
             
             <h1 className="text-4xl md:text-6xl xl:text-7xl font-black uppercase leading-[0.9] tracking-tighter">
-              A Nova Era <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-pink">da Criação</span>
+              Landing Page <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-pink">Master IA</span>
             </h1>
 
             <p className="text-slate-400 font-medium text-base md:text-lg max-w-md leading-relaxed">
-              Continue sua formação DS e domine as ferramentas que estão moldando o futuro.
+              Domine a engenharia de prompt e crie páginas profissionais do zero absoluto ao lançamento profissional.
             </p>
 
             <button 
               onClick={() => {
-                const lastUnlocked = [...modules].reverse().find(m => !m.locked);
-                if (lastUnlocked) {
-                  setActiveModule(lastUnlocked);
+                const nextModule = modules.find((m: any) => !m.passed && !m.locked) || modules[0];
+                if (nextModule) {
+                  setActiveModule(nextModule);
                   setView('lesson');
                 }
               }}
@@ -309,10 +229,10 @@ function DashboardView({ user, modules, setView, setActiveModule, handleLogout, 
 
 function ProjectsView({ onBack, onSelectLesson }: { onBack: () => void; onSelectLesson: () => void }) {
   const projects = [
-    { title: "Landing Page Pro", desc: "Estrutura otimizada para alta conversão.", icon: <Layout className="text-brand-purple" />, tag: "INICIANTE" },
-    { title: "Gerador de Bio", desc: "Mini SaaS para links personalizados.", icon: <Instagram className="text-brand-pink" />, tag: "SAAS" },
-    { title: "Dashboard Vendas", desc: "Controle financeiro simples.", icon: <DollarSign className="text-yellow-400" />, tag: "PRO" },
-    { title: "Portfólio 3D", desc: "Mostre seus trabalhos com tecnologia.", icon: <Rocket className="text-brand-green" />, tag: "AVANÇADO" }
+    { title: "LP de Alta Conversão", desc: "Estrutura moderna para agências e infoprodutos.", icon: <Layout className="text-brand-purple" />, tag: "PREMIUM" },
+    { title: "Página de Vendas IA", desc: "Focada em gatilhos mentais e psicologia visual.", icon: <Sparkles className="text-brand-pink" />, tag: "CONVERSÃO" },
+    { title: "Captura de Leads", desc: "Design minimalista e direto para coletar contatos.", icon: <Users className="text-yellow-400" />, tag: "LEADS" },
+    { title: "Dashboard Freelancer", desc: "Aprenda a gerir seus primeiros clientes de IA.", icon: <Rocket className="text-brand-green" />, tag: "NEGÓCIO" }
   ];
 
   return (
@@ -349,19 +269,25 @@ function ProjectsView({ onBack, onSelectLesson }: { onBack: () => void; onSelect
   );
 }
 
-function HistoryView({ module2Unlocked, score, answers, currentStep, stepsLength }: any) {
+function HistoryView({ modules, overallProgress }: { modules: any[]; overallProgress: number }) {
+  const passedCount = modules.filter(m => m.passed).length;
+  const totalCount = modules.length;
+
   return (
     <div className="min-h-screen bg-bg-deep text-white p-6 md:p-12 font-sans relative overflow-hidden pb-24 no-scrollbar overflow-y-auto">
       <div className="max-w-4xl mx-auto space-y-12 relative z-10">
-         <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none">
-           Sua <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-pink">Jornada</span>
-         </h1>
+          <div className="space-y-4">
+            <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none">
+              Sua <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-pink">Evolução</span>
+            </h1>
+            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Acompanhe sua maestria em Landing Pages com IA.</p>
+          </div>
 
          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { label: "Módulos", value: module2Unlocked ? "02/05" : "01/05", icon: <CheckCircle2 className="text-brand-green" /> },
-              { label: "Simulado", value: answers.length > 0 ? `${score}/10` : "PENDENTE", icon: <Trophy className="text-yellow-400" /> },
-              { label: "Passo Atual", value: `0${currentStep + 1}`, icon: <Clock className="text-brand-purple" /> }
+              { label: "Módulos Concluídos", value: `${passedCount}/${totalCount}`, icon: <CheckCircle2 className="text-brand-green" /> },
+              { label: "Progresso Geral", value: `${Math.round(overallProgress)}%`, icon: <Trophy className="text-yellow-400" /> },
+              { label: "Status Digital", value: passedCount >= totalCount / 2 ? "PRO" : "STARTED", icon: <Rocket className="text-brand-purple" /> }
             ].map((stat, idx) => (
               <div key={idx} className="p-8 rounded-[40px] bg-white/5 border border-white/10 text-center space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mx-auto">{stat.icon}</div>
@@ -369,6 +295,24 @@ function HistoryView({ module2Unlocked, score, answers, currentStep, stepsLength
                 <p className="text-3xl font-black uppercase tracking-tight">{stat.value}</p>
               </div>
             ))}
+         </div>
+
+         <div className="space-y-6">
+            <h3 className="text-2xl font-black uppercase tracking-tight">Timeline de Conquistas</h3>
+            <div className="space-y-4">
+               {modules.map((m, idx) => (
+                 <div key={m.id} className={`p-6 rounded-3xl border transition-all flex items-center gap-6 ${m.passed ? 'bg-brand-green/5 border-brand-green/20' : 'bg-white/5 border-white/5 opacity-50'}`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black ${m.passed ? 'bg-brand-green text-black' : 'bg-white/10 text-slate-500'}`}>
+                       {idx + 1}
+                    </div>
+                    <div className="flex-1">
+                       <h4 className="font-black uppercase text-sm tracking-tight">{m.title}</h4>
+                       <p className="text-xs text-slate-500">{m.passed ? 'Certificado garantido' : 'Pendente de conclusão'}</p>
+                    </div>
+                    {m.passed && <CheckCircle2 size={20} className="text-brand-green" />}
+                 </div>
+               ))}
+            </div>
          </div>
       </div>
     </div>
@@ -382,11 +326,8 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [copied, setCopied] = useState(false);
-  const [isQuizMode, setIsQuizMode] = useState(false);
-  const [quizProgress, setQuizProgress] = useState(0);
   const [answers, setAnswers] = useState<number[]>([]);
   const [module2Unlocked, setModule2Unlocked] = useState(false);
-  const [showResult, setShowResult] = useState(false);
   const [user, setUser] = useState<{ email: string, is_paid: number, is_admin: number } | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [selectedProject, setSelectedProject] = useState<null | { title: string, desc: string, stack: string[], features: string[], logic: string }>(null);
@@ -429,233 +370,17 @@ export default function App() {
     checkAuth();
   }, []);
 
-  const handleAnswer = (optionIdx: number) => {
-    const newAnswers = [...answers, optionIdx];
-    setAnswers(newAnswers);
-    if (quizProgress < QUESTIONS.length - 1) {
-      setQuizProgress(prev => prev + 1);
-    } else {
-      setShowResult(true);
-    }
-  };
-
-  const resetQuiz = () => {
-    setQuizProgress(0);
-    setAnswers([]);
-    setShowResult(false);
-  };
-
-  const startQuiz = () => {
-    setIsQuizMode(true);
-    resetQuiz();
-  };
-
-  const finishQuiz = () => {
-    if (score >= 7) {
-      setModule2Unlocked(true);
-      setIsQuizMode(false);
-      setCurrentStep(4);
-    } else {
-      resetQuiz();
-    }
-  };
-
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const steps: Step[] = [
-    {
-      id: 0,
-      title: "GitHub",
-      subtitle: "Onde o código vive na nuvem.",
-      icon: <Github className="w-6 h-6" />,
-      color: "bg-white text-black",
-      content: (
-        <div className="space-y-8">
-          <div className="bg-white/5 p-6 border border-white/10 rounded-sm">
-            <h4 className="font-black text-[#00FF88] uppercase tracking-wider flex items-center gap-2 mb-3 text-sm">
-              <BookOpen size={18} /> O que é o GitHub?
-            </h4>
-            <p className="text-slate-400 text-base leading-relaxed font-medium">
-              É onde você guarda seus projetos (código) na nuvem. Pense nele como o "Google Drive" dos programadores, mas muito mais potente.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <h4 className="font-black uppercase tracking-tighter text-2xl text-white">Passo a passo</h4>
-            <ol className="space-y-4 text-slate-300 text-base font-bold uppercase tracking-tight">
-              <li className="flex gap-4 items-start"><span className="text-[#00FF88]">01.</span> Acesse o <a href="https://github.com" target="_blank" className="text-[#00FF88] hover:underline inline-flex items-center gap-1">GitHub Oficial <ExternalLink size={14} /></a></li>
-              <li className="flex gap-4 items-start"><span className="text-[#00FF88]">02.</span> Clique em <strong className="text-white">Sign up</strong></li>
-              <li className="flex gap-4 items-start"><span className="text-[#00FF88]">03.</span> Preencha: Email, Senha e Nome</li>
-              <li className="flex gap-4 items-start"><span className="text-[#00FF88]">04.</span> Confirme o e-mail recebido</li>
-              <li className="flex gap-4 items-start"><span className="text-[#00FF88]">05.</span> Escolha o plano gratuito</li>
-            </ol>
-          </div>
-
-          <div className="pt-6 border-t border-white/10">
-            <div className="bg-white text-black px-4 py-1 font-black text-xs inline-block mb-3">RESULTADO</div>
-            <p className="text-sm text-slate-400 font-bold uppercase tracking-widest italic">Conta criada! Você está pronto para o futuro.</p>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 1,
-      title: "App.new",
-      subtitle: "IA que gera sites com descrição.",
-      icon: <Sparkles className="w-6 h-6" />,
-      color: "bg-[#00FF88] text-black",
-      content: (
-        <div className="space-y-8">
-          <div className="bg-[#00FF88]/5 p-6 border border-[#00FF88]/20 rounded-sm">
-            <h4 className="font-black text-[#00FF88] uppercase tracking-wider flex items-center gap-2 mb-3 text-sm">
-              <BookOpen size={18} /> O que é o app.new?
-            </h4>
-            <p className="text-slate-400 text-base leading-relaxed font-medium">
-              Uma ferramenta de IA que gera sites completos apenas com descrições em texto.
-            </p>
-          </div>
-
-          <div className="space-y-6">
-            <h4 className="font-black uppercase tracking-tighter text-2xl text-white flex items-center gap-2">
-              <MessageSquareIcon size={24} className="text-[#00FF88]" /> Prompt Recomendado
-            </h4>
-            <div className="relative group">
-              <pre className="bg-[#1A1A1E] text-slate-300 p-6 rounded-sm text-sm overflow-x-auto whitespace-pre-wrap leading-relaxed border border-white/5 font-mono shadow-2xl">
-                {`Crie uma página web completa em um único arquivo HTML.
-
-Requisitos:
-- Design moderno e profissional
-- Responsivo (funciona no celular)
-- Seções: Hero, Sobre, Serviços, Contato
-- Animações suaves ao rolar a página
-- Botões com efeito hover
-- Código limpo e organizado`}
-              </pre>
-              <button 
-                onClick={() => copyToClipboard(`Crie uma página web completa em um único arquivo HTML.\n\nRequisitos:\n- Design moderno e profissional\n- Responsivo (funciona no celular)\n- Seções: Hero, Sobre, Serviços, Contato\n- Animações suaves ao rolar a página\n- Botões com efeito hover\n- Código limpo e organizado`)}
-                className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-[#00FF88] hover:text-black transition-all rounded-sm"
-              >
-                {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
-              </button>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 2,
-      title: "Vercel",
-      subtitle: "Hospedagem profissional gratuita.",
-      icon: <Rocket className="w-6 h-6" />,
-      color: "bg-black text-white",
-      content: (
-        <div className="space-y-8">
-          <div className="bg-white/5 p-6 border border-white/10 rounded-sm">
-            <h4 className="font-black text-white uppercase tracking-wider flex items-center gap-2 mb-3 text-sm">
-              <UploadCloud size={18} /> O que é a Vercel?
-            </h4>
-            <p className="text-slate-400 text-base leading-relaxed font-medium">
-              A melhor plataforma para colocar seus sites no ar gratuitamente. Ela conecta com seu GitHub e atualiza o site automaticamente sempre que você muda o código.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-6 bg-white/5 border border-white/10 rounded-sm">
-              <h5 className="font-black text-white uppercase text-xs mb-2 tracking-widest">FUNCIONALIDADE</h5>
-              <p className="text-xs text-slate-400 font-medium">Deploy instantâneo, certificados SSL grátis e URL personalizada.</p>
-            </div>
-            <div className="p-6 bg-white/5 border border-white/10 rounded-sm">
-              <h5 className="font-black text-white uppercase text-xs mb-2 tracking-widest">INTEGRAÇÃO</h5>
-              <p className="text-xs text-slate-400 font-medium">Conecta em 1 clique com repositórios do GitHub.</p>
-            </div>
-          </div>
-        </div>
-      )
-    },
-    {
-      id: 3,
-      title: "Mão na Massa",
-      subtitle: "Criando seu primeiro SaaS.",
-      icon: <Code className="w-6 h-6" />,
-      color: "bg-brand-purple text-white",
-      content: (
-        <div className="space-y-8">
-           <div className="bg-brand-purple/10 p-8 border border-brand-purple/20 rounded-sm">
-              <h4 className="text-2xl font-black uppercase tracking-tighter mb-4">Seu Desafio</h4>
-              <p className="text-slate-300 font-medium leading-relaxed">
-                Você vai usar a IA para criar um gerador de links (estilo Linktree). É o primeiro passo para entender como um SaaS funciona por trás das câmeras.
-              </p>
-           </div>
-           
-           <div className="p-8 bg-black/40 border border-white/5 rounded-sm space-y-4">
-             <div className="flex items-center gap-2 text-brand-purple">
-               <AlertCircle size={20} />
-               <span className="font-black uppercase text-xs tracking-widest">Checklist de Execução</span>
-             </div>
-             <ul className="space-y-3">
-               {[
-                 "Descreva seu projeto para a IA",
-                 "Baixe o código gerado",
-                 "Crie um repositório no GitHub",
-                 "Suba os arquivos para o GitHub",
-                 "Conecte o repositório na Vercel"
-               ].map((item, i) => (
-                 <li key={i} className="flex items-center gap-3 text-slate-400 text-sm font-bold uppercase tracking-tight">
-                   <div className="w-5 h-5 rounded-full border-2 border-white/10 flex items-center justify-center text-[10px]">{i+1}</div>
-                   {item}
-                 </li>
-               ))}
-             </ul>
-           </div>
-        </div>
-      )
-    },
-    {
-      id: 4,
-      title: "Desafio Final",
-      subtitle: "Teste seus conhecimentos.",
-      icon: <Trophy className="w-6 h-6" />,
-      color: "bg-yellow-400 text-black",
-      content: (
-        <div className="space-y-8 text-center py-12">
-           <div className="w-24 h-24 bg-yellow-400/20 rounded-full flex items-center justify-center mx-auto mb-6 border-4 border-yellow-400/50">
-             <Trophy size={48} className="text-yellow-400" />
-           </div>
-           <h3 className="text-4xl font-black uppercase tracking-tighter">Simulado Global</h3>
-           <p className="text-slate-400 max-w-md mx-auto font-medium">
-             Responda 10 perguntas cruciais para validar seu conhecimento e desbloquear o próximo nível da formação.
-           </p>
-           <button 
-             onClick={startQuiz}
-             className="mt-8 px-12 py-5 bg-yellow-400 text-black font-black uppercase tracking-widest rounded-sm hover:scale-105 transition-transform shadow-2xl shadow-yellow-400/20"
-           >
-             Começar Agora
-           </button>
-        </div>
-      )
-    }
-  ];
-
-  // Simulation of module progress
-  const moduleProgress = useMemo(() => [
-    { id: 0, title: "Fundamentos", desc: "Entenda os conceitos e ferramentas essenciais para começar.", progress: 100, icon: <BookOpen className="w-5 h-5" /> },
-    { id: 1, title: "Criação de Sites com IA", desc: "Crie sites profissionais utilizando inteligência artificial.", progress: 75, icon: <Sparkles className="w-5 h-5" /> },
-    { id: 2, title: "Desenvolvendo um Mini SaaS", desc: "Crie aplicações completas e funcionais passo a passo.", progress: 50, icon: <Layers className="w-5 h-5" /> },
-    { id: 3, title: "Deploy e Publicação", desc: "Publique seus projetos e deixe-os disponíveis para o mundo.", progress: 25, icon: <Rocket className="w-5 h-5" /> },
-    { id: 4, title: "Monetização", desc: "Estratégias para vender seus projetos e escalar seu negócio.", progress: 0, icon: <DollarSign className="w-5 h-5" />, locked: !module2Unlocked },
-  ], [module2Unlocked]);
-
-  const score = useMemo(() => {
-    return answers.reduce((acc, ans, idx) => {
-      return ans === QUESTIONS[idx].correct ? acc + 1 : acc;
-    }, 0);
-  }, [answers]);
-
-  const overallProgress = Math.round(((currentStep + 1) / (steps?.length || 1)) * 100);
+  const overallProgress = useMemo(() => {
+    if (!modules || modules.length === 0) return 0;
+    const passedCount = modules.filter(m => m.passed).length;
+    return Math.round((passedCount / modules.length) * 100);
+  }, [modules]);
 
   const fetchModules = async () => {
     try {
@@ -699,7 +424,6 @@ Requisitos:
             credentials: 'include',
             body: JSON.stringify({
               current_step: currentStep,
-              score: score,
               answers: answers
             })
           });
@@ -709,7 +433,7 @@ Requisitos:
       }, 3000); // Save every 3 seconds of change
       return () => clearTimeout(timer);
     }
-  }, [currentStep, score, answers, user, view]);
+  }, [currentStep, answers, user, view]);
 
   const handleLogout = async () => {
     try {
@@ -798,6 +522,83 @@ Requisitos:
 
   return (
     <div className="view-container safe-area-bottom flex flex-col h-screen">
+      {/* Sidebar Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex justify-end"
+          >
+            <motion.div 
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              onClick={e => e.stopPropagation()}
+              className="w-full max-w-sm bg-[#09090b] h-full shadow-2xl p-8 flex flex-col gap-8 border-l border-white/5"
+            >
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                   <img src="https://i.postimg.cc/kgmY092W/image-removebg-preview-(20).png" alt="Logo" className="w-8 h-8 object-contain" />
+                   <span className="font-black uppercase tracking-tighter text-xl">LP Master</span>
+                </div>
+                <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-white/5 rounded-xl text-slate-500">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 space-y-2">
+                {[
+                  { id: 'dashboard', label: 'Dashboard', icon: Home },
+                  { id: 'projects', label: 'Projetos', icon: Layers },
+                  { id: 'history', label: 'Jornada', icon: Clock },
+                  { id: 'admin', label: 'Admin', icon: ShieldCheck, adminOnly: true },
+                ].map(item => {
+                  if (item.adminOnly && !user?.is_admin) return null;
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setView(item.id);
+                        setIsSidebarOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-4 p-5 rounded-2xl transition-all ${
+                        view === item.id ? 'bg-brand-purple text-white' : 'text-slate-400 hover:bg-white/5'
+                      }`}
+                    >
+                      <Icon size={20} />
+                      <span className="font-black uppercase text-xs tracking-widest">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-8 border-t border-white/5 space-y-4">
+                 <div className="flex items-center gap-4 px-4 py-2">
+                    <div className="w-10 h-10 rounded-full bg-brand-purple/20 flex items-center justify-center text-brand-purple font-black">
+                       {user?.email[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest leading-none mb-1">Logado como</p>
+                      <p className="font-bold text-xs truncate max-w-[200px]">{user?.email}</p>
+                    </div>
+                 </div>
+                 <button 
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-4 p-5 rounded-2xl text-red-500 hover:bg-red-500/10 transition-all font-black uppercase text-xs tracking-widest"
+                 >
+                   <Rocket className="rotate-180" size={20} />
+                   Sair da Conta
+                 </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         <ViewContainer viewKey={view}>
           {view === 'admin' && user?.is_admin && (
@@ -813,11 +614,8 @@ Requisitos:
 
           {view === 'history' && (
              <HistoryView 
-               module2Unlocked={module2Unlocked}
-               score={score}
-               answers={answers}
-               currentStep={currentStep}
-               stepsLength={steps.length}
+               modules={modules}
+               overallProgress={overallProgress}
              />
           )}
 
@@ -869,7 +667,7 @@ Requisitos:
                     )}
 
                     <div className="space-y-4">
-                       <p className="text-[10px] font-black text-brand-purple uppercase tracking-[0.4em]">DS Company Academy</p>
+                       <p className="text-[10px] font-black text-brand-purple uppercase tracking-[0.4em]">Landing Page Master</p>
                        <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none">{activeModule.title}</h2>
                     </div>
                     

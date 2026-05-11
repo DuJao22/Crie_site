@@ -9,20 +9,20 @@ interface LandingPageProps {
 const testimonials = [
   {
     name: "Carlos Silva",
-    role: "Empreendedor Digital",
-    content: "O DS Company mudou minha percepção sobre IA. Em uma semana criei meu primeiro SaaS lucrativo.",
+    role: "Freelancer",
+    content: "O treinamento mudou minha percepção sobre IA. Em uma semana criei minha primeira landing page profissional para um cliente.",
     avatar: "https://i.pravatar.cc/100?img=11"
   },
   {
     name: "Ana Oliveira",
-    role: "Product Designer",
-    content: "A facilidade de criar interfaces complexas sem tocar no código é bizarra. Recomendo muito!",
+    role: "Social Media",
+    content: "A facilidade de criar páginas de alta conversão sem tocar no código é bizarra. Meus clientes adoraram os resultados!",
     avatar: "https://i.pravatar.cc/100?img=32"
   },
   {
     name: "Marcos Souza",
-    role: "Freelancer Web",
-    content: "Consegui escalar meu serviço de criação de sites em 10x usando as ferramentas ensinadas aqui.",
+    role: "Gestor de Tráfego",
+    content: "Consegui escalar meu serviço de criação de páginas em 10x usando as ferramentas e prompts ensinados aqui.",
     avatar: "https://i.pravatar.cc/100?img=53"
   }
 ];
@@ -40,8 +40,8 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
       {/* Navbar mimic */}
       <nav className="p-6 flex justify-between items-center max-w-7xl mx-auto border-b border-white/5">
         <div className="flex items-center gap-3">
-          <img src="https://i.postimg.cc/kgmY092W/image-removebg-preview-(20).png" alt="DS Company Logo" className="w-10 h-10 object-contain" />
-          <span className="font-black uppercase tracking-tighter text-xl">Company</span>
+          <img src="https://i.postimg.cc/kgmY092W/image-removebg-preview-(20).png" alt="Logo" className="w-10 h-10 object-contain" />
+          <span className="font-black uppercase tracking-tighter text-xl">LP Master</span>
         </div>
         <div className="flex gap-2 md:gap-4">
           <button onClick={onLogin} className="hidden sm:block px-4 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-white transition-colors">Fazer Login</button>
@@ -61,7 +61,7 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
             animate={{ opacity: 1, y: 0 }}
             className="px-4 py-1.5 bg-brand-purple/20 text-brand-purple rounded-full text-[10px] font-black uppercase tracking-widest border border-brand-purple/30"
           >
-            Ecossistema de Criação DS
+            Formação Landing Page Master
           </motion.span>
 
           <motion.h1 
@@ -70,17 +70,16 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
             transition={{ delay: 0.1 }}
             className="text-5xl md:text-8xl font-black uppercase leading-[0.85] tracking-tighter max-w-5xl"
           >
-            A Plataforma Definitiva para <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-pink">Desenvolvimento com IA</span>
+            Landing Pages com <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-pink">IA <br /> Engenharia de Prompt</span>
           </motion.h1>
 
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-slate-400 font-medium text-lg md:text-xl max-w-2xl leading-relaxed"
+            className="text-slate-400 font-medium text-lg md:text-xl max-w-3xl leading-relaxed"
           >
-            Não perca tempo com códigos complexos. Use nossa estrutura otimizada para prototipar, criar e lançar produtos digitais de alta performance em tempo recorde.
+            Domine a engenharia de prompt e crie landing pages profissionais do zero absoluto ao lançamento profissional.
           </motion.p>
 
           <motion.div 
@@ -133,8 +132,8 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               { icon: <Rocket />, title: "Deploy Instantâneo", desc: "Aprenda a colocar seu site no ar em segundos usando GitHub e Vercel sem custo." },
-              { icon: <BookOpen />, title: "Módulos Práticos", desc: "Do zero absoluto até a criação de SaaS complexos com autenticação e banco de dados." },
-              { icon: <FileText />, title: "Templates Prontos", desc: "Acesse uma biblioteca de estruturas otimizadas para clonar e adaptar seus projetos." }
+              { icon: <BookOpen />, title: "Módulos Práticos", desc: "Do zero absoluto até a criação de Landing Pages complexas com alta conversão." },
+              { icon: <FileText />, title: "Biblioteca de Prompts", desc: "Acesse uma biblioteca de prompts otimizados para gerar páginas de diversos nichos." }
             ].map((f, i) => (
               <div key={i} className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/[0.08] transition-all group">
                 <div className="w-14 h-14 bg-brand-purple/20 text-brand-purple rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -217,10 +216,10 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
       <footer className="p-20 border-t border-white/5 text-center">
         <div className="flex flex-col items-center gap-6">
           <div className="flex items-center gap-3 grayscale opacity-40">
-            <img src="https://i.postimg.cc/kgmY092W/image-removebg-preview-(20).png" alt="DS Company Logo" className="w-8 h-8 object-contain" />
-            <span className="font-black uppercase tracking-tighter text-xl">Company</span>
+            <img src="https://i.postimg.cc/kgmY092W/image-removebg-preview-(20).png" alt="Logo" className="w-8 h-8 object-contain" />
+            <span className="font-black uppercase tracking-tighter text-xl">LP Master</span>
           </div>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">© {new Date().getFullYear()} ds Company • Todos os direitos reservados</p>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">© {new Date().getFullYear()} LP Master • Todos os direitos reservados</p>
         </div>
       </footer>
     </div>
