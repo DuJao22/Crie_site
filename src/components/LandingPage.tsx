@@ -6,18 +6,46 @@ interface LandingPageProps {
   onLogin: () => void;
 }
 
+const testimonials = [
+  {
+    name: "Carlos Silva",
+    role: "Empreendedor Digital",
+    content: "O DS Company mudou minha percepção sobre IA. Em uma semana criei meu primeiro SaaS lucrativo.",
+    avatar: "https://i.pravatar.cc/100?img=11"
+  },
+  {
+    name: "Ana Oliveira",
+    role: "Product Designer",
+    content: "A facilidade de criar interfaces complexas sem tocar no código é bizarra. Recomendo muito!",
+    avatar: "https://i.pravatar.cc/100?img=32"
+  },
+  {
+    name: "Marcos Souza",
+    role: "Freelancer Web",
+    content: "Consegui escalar meu serviço de criação de sites em 10x usando as ferramentas ensinadas aqui.",
+    avatar: "https://i.pravatar.cc/100?img=53"
+  }
+];
+
 export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-[#09090b] text-white selection:bg-brand-purple selection:text-white overflow-x-hidden">
+      {/* Mobile PWA Tip */}
+      <div className="bg-brand-purple/20 border-b border-brand-purple/30 p-3 text-center">
+        <p className="text-[10px] md:text-xs font-black uppercase tracking-widest text-brand-purple">
+          💡 Dica: No celular, clique em "Adicionar à Tela de Início" para usar em tela cheia!
+        </p>
+      </div>
+
       {/* Navbar mimic */}
       <nav className="p-6 flex justify-between items-center max-w-7xl mx-auto border-b border-white/5">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-brand-purple rounded-lg flex items-center justify-center font-black italic text-black">DS</div>
           <span className="font-black uppercase tracking-tighter text-xl">Company</span>
         </div>
-        <div className="flex gap-4">
-          <button onClick={onLogin} className="px-6 py-2 text-xs font-black uppercase text-slate-400 hover:text-white transition-colors">Login</button>
-          <button onClick={onStart} className="px-6 py-2 bg-white text-black text-xs font-black uppercase rounded-lg hover:bg-brand-purple transition-colors">Assinar Agora</button>
+        <div className="flex gap-2 md:gap-4">
+          <button onClick={onLogin} className="hidden sm:block px-4 py-2 text-[10px] font-black uppercase text-slate-400 hover:text-white transition-colors">Fazer Login</button>
+          <button onClick={onStart} className="px-4 md:px-6 py-2 bg-white text-black text-[10px] font-black uppercase rounded-lg hover:bg-brand-purple hover:text-white transition-colors">Acessar Sistema</button>
         </div>
       </nav>
 
@@ -33,7 +61,7 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
             animate={{ opacity: 1, y: 0 }}
             className="px-4 py-1.5 bg-brand-purple/20 text-brand-purple rounded-full text-[10px] font-black uppercase tracking-widest border border-brand-purple/30"
           >
-            Treinamento de Elite
+            Ecossistema de Criação DS
           </motion.span>
 
           <motion.h1 
@@ -42,8 +70,8 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
             transition={{ delay: 0.1 }}
             className="text-5xl md:text-8xl font-black uppercase leading-[0.85] tracking-tighter max-w-5xl"
           >
-            Crie Sites, Apps e SaaS <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-pink">Mesmo Sem Programar</span>
+            A Plataforma Definitiva para <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-pink">Desenvolvimento com IA</span>
           </motion.h1>
 
           <motion.p 
@@ -52,7 +80,7 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
             transition={{ delay: 0.2 }}
             className="text-slate-400 font-medium text-lg md:text-xl max-w-2xl leading-relaxed"
           >
-            Aprenda a transformar ideias em projetos reais usando inteligência artificial — e coloque tudo no ar em minutos. Sem complicação. Sem enrolação. Resultado prático.
+            Não perca tempo com códigos complexos. Use nossa estrutura otimizada para prototipar, criar e lançar produtos digitais de alta performance em tempo recorde.
           </motion.p>
 
           <motion.div 
@@ -63,21 +91,19 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
           >
             <button 
               onClick={onStart}
-              className="px-10 py-5 bg-gradient-to-r from-brand-purple to-brand-pink text-white font-black uppercase text-sm tracking-widest rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-4 shadow-[0_20px_40px_rgba(99,102,241,0.2)] group"
+              className="px-10 py-5 bg-gradient-to-r from-brand-purple to-brand-pink text-white font-black uppercase text-xs tracking-widest rounded-xl hover:opacity-90 transition-all flex items-center justify-center gap-4 shadow-[0_20px_40px_rgba(99,102,241,0.2)] group"
             >
-              Quero Começar Agora 🚀
+              Criar Minha Conta Grátis 🚀
             </button>
-                <a 
-                  href="https://bio.site/Joao_Layon_DS_Company" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="px-10 py-5 bg-white/5 border border-white/10 text-white font-black uppercase text-sm tracking-widest rounded-xl hover:bg-white/10 transition-all flex items-center justify-center"
-                >
-                  Ver Projetos Reais
-                </a>
+            <button 
+              onClick={onLogin}
+              className="px-10 py-5 bg-white/5 border border-white/10 text-white font-black uppercase text-xs tracking-widest rounded-xl hover:bg-white/10 transition-all flex items-center justify-center"
+            >
+              Fazer Login no Painel
+            </button>
           </motion.div>
 
-          {/* Social Proof */}
+          {/* Social Proof Stats */}
           <div className="flex flex-col items-center gap-4 mt-12">
             <div className="flex -space-x-3">
               {[1,2,3,4,5].map(i => (
@@ -90,98 +116,100 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
               <div className="flex text-yellow-400 gap-0.5">
                 {[1,2,3,4,5].map(i => <Sparkles key={i} size={14} fill="currentColor" />)}
               </div>
-              <p className="text-xs font-black text-slate-500 uppercase tracking-widest">+ 5.000 alunos faturando</p>
+              <p className="text-xs font-black text-slate-500 uppercase tracking-widest">+ 5.000 membros integrados</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Connection & Benefits Section */}
+      {/* Features Showcase */}
       <section className="py-32 px-6 bg-white/[0.02] border-y border-white/5">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-          <div className="space-y-8">
-            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter leading-tight">
-              A verdade é simples: <br />
-              <span className="text-brand-purple">Quem aprender agora, domina o mercado.</span>
-            </h2>
-            <p className="text-slate-400 text-lg leading-relaxed">
-              Se você sente que está ficando para trás enquanto outras pessoas estão criando sites, aplicativos e até negócios com IA… Esse treinamento foi feito exatamente para você.
-            </p>
-            <div className="space-y-4">
-              {[
-                "Crie sites profissionais com IA",
-                "Desenvolva mini SaaS do zero",
-                "Publique seus projetos online",
-                "Aprenda o método mais rápido e prático",
-                "Sem precisar saber código avançado"
-              ].map((text, idx) => (
-                <div key={idx} className="flex items-center gap-3 text-sm font-black uppercase text-white/90">
-                  <div className="w-6 h-6 rounded-full bg-brand-green/20 flex items-center justify-center text-brand-green">
-                    <CheckCircle2 size={14} />
-                  </div>
-                  {text}
-                </div>
-              ))}
-            </div>
+        <div className="max-w-7xl mx-auto space-y-20">
+          <div className="text-center space-y-4">
+            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter">O que você vai <span className="text-brand-purple">Domina</span></h2>
+            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Transforme conhecimento em produtos reais.</p>
           </div>
-          <div className="relative">
-            <div className="aspect-square bg-gradient-to-br from-brand-purple/20 to-brand-pink/20 rounded-3xl border border-white/10 p-8 flex flex-col justify-between overflow-hidden shadow-2xl">
-              <div className="space-y-2">
-                <div className="w-12 h-12 bg-white/10 rounded-xl mb-4" />
-                <div className="w-full h-4 bg-white/10 rounded-full" />
-                <div className="w-3/4 h-4 bg-white/10 rounded-full" />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { icon: <Rocket />, title: "Deploy Instantâneo", desc: "Aprenda a colocar seu site no ar em segundos usando GitHub e Vercel sem custo." },
+              { icon: <BookOpen />, title: "Módulos Práticos", desc: "Do zero absoluto até a criação de SaaS complexos com autenticação e banco de dados." },
+              { icon: <FileText />, title: "Templates Prontos", desc: "Acesse uma biblioteca de estruturas otimizadas para clonar e adaptar seus projetos." }
+            ].map((f, i) => (
+              <div key={i} className="p-8 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/[0.08] transition-all group">
+                <div className="w-14 h-14 bg-brand-purple/20 text-brand-purple rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  {f.icon}
+                </div>
+                <h3 className="text-2xl font-black uppercase tracking-tight mb-4">{f.title}</h3>
+                <p className="text-slate-400 font-medium leading-relaxed">{f.desc}</p>
               </div>
-              <div className="relative z-10 space-y-4">
-                  <div className="p-4 bg-white/5 border border-white/10 rounded-xl backdrop-blur-xl">
-                    <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Status do Projeto</p>
-                    <p className="text-sm font-black text-[#00FF88] uppercase">Online & Monetizando 🚀</p>
-                  </div>
-                  <div className="p-4 bg-white/10 rounded-xl">
-                    <p className="text-xs font-bold leading-tight">"Você não precisa ser programador. Você precisa saber o caminho certo."</p>
-                  </div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Final Offer */}
-      <section className="py-40 px-6 text-center">
-        <div className="max-w-4xl mx-auto space-y-12">
+      {/* Social Proof / Testimonials */}
+      <section className="py-32 px-6">
+        <div className="max-w-7xl mx-auto space-y-16">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div className="space-y-4">
-               <h3 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none">
-                 Garantir meu acesso <br />
-                 <span className="text-brand-purple">Vitalício</span>
-               </h3>
-               <div className="flex flex-col items-center gap-2 mt-4">
-                  <p className="text-slate-500 font-black uppercase tracking-widest text-xs line-through">De R$ 390,00</p>
-                  <p className="text-4xl md:text-6xl font-black uppercase tracking-tighter">Por apenas <span className="text-brand-green">R$ 39,90</span></p>
-               </div>
-               <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">O acesso pode ser fechado a qualquer momento.</p>
+              <span className="text-[10px] font-black text-brand-purple uppercase tracking-[0.4em]">Life Changing</span>
+              <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter">Provas de <span className="text-brand-pink">Sucesso</span></h2>
             </div>
+            <p className="text-slate-400 font-medium max-w-sm">Veja o que os membros da nossa comunidade estão construindo com o método DS.</p>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-               {[
-                 "Material prático direto ao ponto",
-                 "Projetos completos do zero",
-                 "Criação de sites, apps e mini SaaS",
-                 "Deploy real com GitHub e Vercel",
-                 "Estratégias para monetizar"
-               ].map((item, idx) => (
-                 <div key={idx} className="p-5 bg-white/5 border border-white/10 rounded-xl font-bold uppercase text-xs tracking-tight flex items-center gap-4">
-                   <div className="w-2 h-2 rounded-full bg-brand-purple shadow-[0_0_10px_rgba(99,102,241,0.5)]" />
-                   {item}
-                 </div>
-               ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((t, i) => (
+              <div key={i} className="p-8 rounded-3xl bg-white/5 border border-white/10 space-y-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-brand-purple/5 blur-2xl rounded-full" />
+                <div className="flex text-yellow-400 gap-0.5">
+                  {[1,2,3,4,5].map(star => <Sparkles key={star} size={10} fill="currentColor" />)}
+                </div>
+                <p className="text-sm font-medium italic text-slate-300 leading-relaxed">"{t.content}"</p>
+                <div className="flex items-center gap-4 pt-4 border-t border-white/5">
+                  <div className="w-10 h-10 rounded-full overflow-hidden grayscale group-hover:grayscale-0 transition-all">
+                    <img src={t.avatar} alt={t.name} />
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-black uppercase tracking-tight">{t.name}</p>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{t.role}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Final */}
+      <section className="py-40 px-6 text-center bg-gradient-to-t from-brand-purple/10 to-transparent">
+        <div className="max-w-4xl mx-auto space-y-12">
+            <h3 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none">
+              Pronto para <br />
+              <span className="text-brand-purple">Transformar Ideias?</span>
+            </h3>
+            
+            <p className="text-slate-400 font-medium text-lg max-w-2xl mx-auto">
+              Junte-se a milhares de outros alunos que já estão construindo o futuro da web usando Inteligência Artificial.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <button 
+                onClick={onStart}
+                className="px-12 py-6 bg-white text-black font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-brand-purple hover:text-white transition-all shadow-2xl flex items-center justify-center gap-4"
+              >
+                Acessar Portal Agora <ChevronRight size={18} />
+              </button>
+              <button 
+                onClick={onLogin}
+                className="px-12 py-6 bg-white/5 border border-white/10 text-white font-black uppercase text-xs tracking-widest rounded-2xl hover:bg-white/10 transition-all"
+              >
+                Entrar na Minha Conta
+              </button>
             </div>
-
-            <button 
-              onClick={onStart}
-              className="w-full py-6 bg-white text-black font-black uppercase text-sm tracking-widest rounded-2xl hover:bg-brand-purple hover:text-white transition-all shadow-2xl"
-            >
-              Garantir Meu Acesso Agora
-            </button>
-            <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.3em]">Comece agora e crie seu primeiro projeto ainda hoje.</p>
+            
+            <p className="text-[10px] text-slate-600 font-black uppercase tracking-[0.3em]">Ambiente seguro • Acesso imediato • 100% Online</p>
         </div>
       </section>
 
@@ -192,9 +220,10 @@ export default function LandingPage({ onStart, onLogin }: LandingPageProps) {
             <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center font-black italic text-white/40">DS</div>
             <span className="font-black uppercase tracking-tighter text-xl text-white/40">Company</span>
           </div>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">© 2024 ds Company • Todos os direitos reservados</p>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">© {new Date().getFullYear()} ds Company • Todos os direitos reservados</p>
         </div>
       </footer>
     </div>
   );
 }
+

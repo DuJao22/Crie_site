@@ -7,17 +7,13 @@ import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import cors from "cors";
-import { MercadoPagoConfig, Preference } from 'mercadopago';
 
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-for-dev-only";
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-const MP_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN;
 const CONNECTION_STRING = process.env.SQLITE_CLOUD_CONNECTION_STRING;
-
-const client = MP_ACCESS_TOKEN ? new MercadoPagoConfig({ accessToken: MP_ACCESS_TOKEN }) : null;
 
 // Initialize SQLite Cloud database
 // Note: We'll initialize it properly inside startServer after checking the connection string
@@ -43,7 +39,7 @@ async function initDatabase() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        is_paid INTEGER DEFAULT 0,
+        is_paid INTEGER DEFAULT 1,
         is_admin INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
@@ -73,12 +69,94 @@ async function initDatabase() {
       );
     `;
 
+    await db.sql`
+      CREATE TABLE IF NOT EXISTS modules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        content TEXT,
+        image_url TEXT,
+        is_free INTEGER DEFAULT 1,
+        order_index INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
+    // Bootstrap Initial Modules for the New SaaS Course
+    const existingModules = await db.sql`SELECT COUNT(*) as count FROM modules`;
+    if ((existingModules[0] as any).count === 0) {
+      console.log("Bootstrapping 15 course modules...");
+      const courseModules = [
+        { 
+          title: "Módulo 1: Preparando Ambiente", 
+          desc: "Ferramentas essenciais: GitHub, app.new, Render e VS Code.", 
+          img: "https://images.unsplash.com/photo-1587620962725-abab7fe55159?q=80&w=800&auto=format&fit=crop",
+          content: "Ferramentas Necessárias:\n- GitHub: Salvar código\n- app.new: Criar sistema com IA\n- Render: Hospedagem grátis\n- VS Code: Editar código",
+          free: 1 
+        },
+        { 
+          title: "Módulo 2: Criando Conta no GitHub", 
+          desc: "Passo a passo para configurar seu repositório remoto.", 
+          img: "https://images.unsplash.com/photo-1618401471353-b98aade1229a?q=80&w=800&auto=format&fit=crop",
+          content: "O GitHub será onde o código do Mini SaaS ficará salvo.\n\nPassos:\n1. Acesse github.com\n2. Clique em Sign Up\n3. Confirme seu email.",
+          free: 1 
+        },
+        { 
+          title: "Módulo 3: Criando Conta no app.new", 
+          desc: "Acesso à plataforma de IA para geração de apps.", 
+          img: "https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=800&auto=format&fit=crop",
+          content: "Acesse app.new e faça login com seu Google ou GitHub para começar a usar a IA.",
+          free: 1 
+        },
+        { 
+          title: "Módulo 4: Estrutura Profissional do SaaS", 
+          desc: "Aprenda sobre Frontend, Backend, Banco de Dados e API.", 
+          img: "https://images.unsplash.com/photo-1551288049-bbbda536ad37?q=80&w=800&auto=format&fit=crop",
+          content: "Estrutura Ideal:\n- Sistema de Usuários\n- Dashboard Moderno\n- Banco de Dados (SQLite)\n- Painel Admin",
+          free: 0 
+        },
+        { 
+          title: "Módulo 5: Criando o Mini SaaS com IA", 
+          desc: "O prompt definitivo para gerar um sistema completo.", 
+          img: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=800&auto=format&fit=crop",
+          content: "Prompt Profissional:\n'Crie um Mini SaaS profissional usando Flask, SQLite3, HTML, CSS e Jinja2...'",
+          free: 0 
+        },
+        { title: "Módulo 6: Entendendo a Estrutura", desc: "Análise das pastas e arquivos gerados pela IA.", img: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=800", content: "Entenda templates, static, routes e database.", free: 0 },
+        { title: "Módulo 7: Melhorando o SaaS com IA", desc: "Prompts para Dark Mode, Responsividade e Design Premium.", img: "https://images.unsplash.com/photo-1551434678-e076c223a692?q=80&w=800", content: "A evoluçao do sistema através de novos prompts.", free: 0 },
+        { title: "Módulo 8: Banco de Dados SQLite3", desc: "Salvando usuários, logs e planos.", img: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?q=80&w=800", content: "id, nome, email, senha e created_at.", free: 0 },
+        { title: "Módulo 9: Integração com GitHub", desc: "Conectando o app.new ao GitHub para deploys.", img: "https://images.unsplash.com/photo-1556075798-4825dfabb46e?q=80&w=800", content: "git init, add e commit automático.", free: 0 },
+        { title: "Módulo 10: Hospedagem no Render", desc: "Colocando seu sistema online definitivamente.", img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800", content: "Configurando Build e Start commands.", free: 0 },
+        { title: "Módulo 11: Estrutura Visual", desc: "Glassmorphism, gradientes e dashboard premium.", img: "https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=800", content: "Design moderno estilo startup.", free: 0 },
+        { title: "Módulo 12: Estrutura REAL de SaaS", desc: "Tornando sua aplicação escalável.", img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800", content: "Flask, APIs e Segurança.", free: 0 },
+        { title: "Módulo 13: Melhorias Futuras", desc: "Stripe, Mercado Pago e integração com OpenAI.", img: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?q=80&w=800", content: "Evoluindo seu produto digital.", free: 0 },
+        { title: "Módulo 14: Monetização", desc: "Como e onde vender seu Mini SaaS por nichos.", img: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?q=80&w=800", content: "Precificação e Nichos lucrativos.", free: 0 },
+        { title: "Módulo 15: Encerramento", desc: "Parabéns! Você concluiu seu primeiro SaaS.", img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800", content: "Finalização e próximos passos na jornada IA.", free: 0 },
+      ];
+
+      for (let i = 0; i < courseModules.length; i++) {
+        const m = courseModules[i];
+        const res = await db.sql`INSERT INTO modules (title, description, content, image_url, is_free, order_index) VALUES (${m.title}, ${m.desc}, ${m.content}, ${m.img}, ${m.free}, ${i})`;
+        const moduleId = (res as any).lastID || (i + 1);
+
+        // Pre-create 10 dummy questions per module to allow passing
+        for (let j = 1; j <= 10; j++) {
+          await db.sql`INSERT INTO questions (module_id, question, options, correct_option) VALUES (
+            ${moduleId}, 
+            'Pergunta ${j} sobre ${m.title}?', 
+            '["Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D"]', 
+            0
+          )`;
+        }
+      }
+    }
+
     // Support for existing tables that might be missing these columns
     const tableInfo = await db.sql`PRAGMA table_info(users)` as any[];
     const columns = tableInfo.map(c => c.name);
 
     if (!columns.includes("is_paid")) {
-      await db.sql`ALTER TABLE users ADD COLUMN is_paid INTEGER DEFAULT 0`;
+      await db.sql`ALTER TABLE users ADD COLUMN is_paid INTEGER DEFAULT 1`;
       console.log("Added is_paid column to users table");
     }
 
@@ -207,6 +285,174 @@ async function startServer() {
     }
   });
 
+  app.get("/api/admin/modules", authenticateAdmin, async (req, res) => {
+    try {
+      const modules = await getDb().sql`SELECT * FROM modules ORDER BY order_index ASC`;
+      const modulesWithQuestions = await Promise.all(modules.map(async (m: any) => {
+        const questions = await getDb().sql`SELECT * FROM questions WHERE module_id = ${m.id}`;
+        return {
+          ...m,
+          questions: questions.map((q: any) => ({
+            ...q,
+            options: JSON.parse(q.options)
+          }))
+        };
+      }));
+      res.json(modulesWithQuestions);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to fetch modules" });
+    }
+  });
+
+  app.post("/api/admin/modules", authenticateAdmin, async (req, res) => {
+    const { title, description, content, image_url, is_free, order_index } = req.body;
+    try {
+      await getDb().sql`
+        INSERT INTO modules (title, description, content, image_url, is_free, order_index) 
+        VALUES (${title}, ${description}, ${content}, ${image_url}, ${is_free ? 1 : 0}, ${order_index || 0})
+      `;
+      res.status(201).json({ message: "Module created" });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to create module" });
+    }
+  });
+
+  app.put("/api/admin/modules/:id", authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { title, description, content, image_url, is_free, order_index } = req.body;
+    try {
+      await getDb().sql`
+        UPDATE modules SET 
+          title = ${title}, 
+          description = ${description}, 
+          content = ${content},
+          image_url = ${image_url}, 
+          is_free = ${is_free ? 1 : 0}, 
+          order_index = ${order_index} 
+        WHERE id = ${id}
+      `;
+      res.json({ message: "Module updated" });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to update module" });
+    }
+  });
+
+  app.delete("/api/admin/modules/:id", authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    try {
+      await getDb().sql`DELETE FROM modules WHERE id = ${id}`;
+      res.json({ message: "Module deleted" });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to delete module" });
+    }
+  });
+
+  app.post("/api/admin/modules/:id/questions", authenticateAdmin, async (req, res) => {
+    const { id } = req.params;
+    const { questions } = req.body; // Array of { question, options, correct_option }
+
+    if (!Array.isArray(questions) || questions.length !== 10) {
+      return res.status(400).json({ error: "Exactly 10 questions are required" });
+    }
+
+    try {
+      await getDb().sql`DELETE FROM questions WHERE module_id = ${id}`;
+      for (const q of questions) {
+        await getDb().sql`
+          INSERT INTO questions (module_id, question, options, correct_option) 
+          VALUES (${id}, ${q.question}, ${JSON.stringify(q.options)}, ${q.correct_option})
+        `;
+      }
+      res.json({ message: "Questions updated" });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to update questions" });
+    }
+  });
+
+  app.get("/api/modules", authenticateToken, async (req: any, res) => {
+    try {
+      const modules = await getDb().sql`SELECT * FROM modules ORDER BY order_index ASC`;
+      const results = await getDb().sql`SELECT module_id, passed, score FROM quiz_results WHERE user_id = ${req.user.id}`;
+      
+      const modulesWithStatus = modules.map((m: any, idx: number) => {
+        const result = results.find((r: any) => r.module_id === m.id);
+        
+        // Logic: Module 0 is always unlocked. 
+        // Module N is unlocked if Module N-1 was passed.
+        let locked = false;
+        if (idx > 0) {
+          const prevModule = modules[idx - 1];
+          const prevResult = results.find((r: any) => r.module_id === prevModule.id);
+          if (!prevResult || !prevResult.passed) {
+            locked = true;
+          }
+        }
+
+        return {
+          ...m,
+          locked,
+          passed: result ? !!result.passed : false,
+          score: result ? result.score : 0
+        };
+      });
+
+      res.json(modulesWithStatus);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to fetch modules" });
+    }
+  });
+
+  app.get("/api/modules/:id/quiz", authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    try {
+      const questions = await getDb().sql`SELECT id, question, options FROM questions WHERE module_id = ${id}`;
+      res.json(questions.map((q: any) => ({
+        ...q,
+        options: JSON.parse(q.options)
+      })));
+    } catch (e) {
+      res.status(500).json({ error: "Failed to fetch quiz" });
+    }
+  });
+
+  app.post("/api/modules/:id/quiz/submit", authenticateToken, async (req: any, res) => {
+    const { id } = req.params;
+    const { answers } = req.body; // Array of indices
+    const userId = req.user.id;
+
+    try {
+      const questions = await getDb().sql`SELECT correct_option FROM questions WHERE module_id = ${id}`;
+      if (questions.length === 0) return res.status(404).json({ error: "Quiz not found" });
+
+      let score = 0;
+      questions.forEach((q: any, idx: number) => {
+        if (answers[idx] === q.correct_option) {
+          score++;
+        }
+      });
+
+      const passed = score >= 7 ? 1 : 0;
+
+      // Update quiz_results
+      const existing = await getDb().sql`SELECT id FROM quiz_results WHERE user_id = ${userId} AND module_id = ${id}`;
+      if (existing.length > 0) {
+        await getDb().sql`
+          UPDATE quiz_results SET score = ${score}, passed = ${passed}, completed_at = CURRENT_TIMESTAMP 
+          WHERE id = ${(existing[0] as any).id}
+        `;
+      } else {
+        await getDb().sql`
+          INSERT INTO quiz_results (user_id, module_id, score, passed) 
+          VALUES (${userId}, ${id}, ${score}, ${passed})
+        `;
+      }
+
+      res.json({ score, passed, message: passed ? "Parabéns! Você passou." : "Infelizmente você não atingiu a nota mínima." });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to submit quiz" });
+    }
+  });
+
   app.post("/api/admin/users/:id/toggle-paid", authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
@@ -259,11 +505,8 @@ async function startServer() {
         maxAge: 24 * 60 * 60 * 1000,
       });
 
-      res.status(201).json({ message: "User created", user: { email, is_admin: 0, is_paid: 0 } });
-    } catch (error: any) {
-      if (error.message && error.message.includes("UNIQUE constraint failed")) {
-        return res.status(400).json({ error: "Email already registered" });
-      }
+      res.status(201).json({ message: "User created", user: { email, is_admin: 0, is_paid: 1 } });
+    } catch (error) {
       res.status(500).json({ error: "Internal server error during registration" });
     }
   });
@@ -365,64 +608,6 @@ async function startServer() {
       res.json({ message: "Progress saved" });
     } catch (error) {
       res.status(500).json({ error: "Failed to save progress" });
-    }
-  });
-
-  const createPreferenceHandler = async (req: any, res: any) => {
-    if (!client) {
-      return res.status(500).json({ error: "Mercado Pago not configured on server" });
-    }
-
-    try {
-      const host = req.get('x-forwarded-host') || req.get('host') || 'localhost:3000';
-      const protocol = host.includes('localhost') ? 'http' : 'https';
-      const baseUrl = `${protocol}://${host}`;
-      
-      const preference = new Preference(client);
-      const body = {
-        items: [
-          {
-            id: 'ds-company-course',
-            title: 'Acesso Vitalício: DS Company Study',
-            quantity: 1,
-            unit_price: 39.90,
-            currency_id: 'BRL',
-          }
-        ],
-        payer: {
-          email: req.user.email,
-        },
-        external_reference: String(req.user.id),
-        back_urls: {
-          success: `${baseUrl}/api/checkout/verify`,
-          failure: `${baseUrl}/dashboard`,
-          pending: `${baseUrl}/dashboard`,
-        },
-        auto_return: 'approved',
-        binary_mode: true,
-      };
-
-      const result = await preference.create({ body });
-      res.json({ id: result.id, init_point: result.init_point });
-    } catch (error: any) {
-      res.status(500).json({ error: "Failed to create payment preference", details: error.message });
-    }
-  };
-
-  app.post("/api/checkout/create-preference", authenticateToken, createPreferenceHandler);
-  app.get("/api/checkout/create-preference", authenticateToken, createPreferenceHandler);
-
-  app.get("/api/checkout/verify", authenticateToken, async (req: any, res) => {
-    const status = req.query.status || req.query.collection_status;
-    if (status === 'success' || status === 'approved') {
-      try {
-        await getDb().sql`UPDATE users SET is_paid = 1 WHERE id = ${req.user.id}`;
-        res.redirect('/dashboard?payment_confirmed=true');
-      } catch (e) {
-        res.redirect('/dashboard?payment_error=true');
-      }
-    } else {
-      res.redirect('/dashboard?payment_failed=true');
     }
   });
 

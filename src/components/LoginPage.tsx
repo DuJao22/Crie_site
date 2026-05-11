@@ -5,10 +5,11 @@ import { ChevronLeft, Lock, Mail, Github, Layout } from 'lucide-react';
 interface LoginPageProps {
   onBack: () => void;
   onLogin: () => void;
+  initialMode?: 'login' | 'register';
 }
 
-export default function LoginPage({ onBack, onLogin }: LoginPageProps) {
-  const [isRegister, setIsRegister] = useState(false);
+export default function LoginPage({ onBack, onLogin, initialMode = 'login' }: LoginPageProps) {
+  const [isRegister, setIsRegister] = useState(initialMode === 'register');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
