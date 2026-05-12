@@ -5,6 +5,7 @@
 
 import { useState, useEffect, ReactNode, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import ReactMarkdown from 'react-markdown';
 import { 
   Github, 
   Sparkles, 
@@ -119,20 +120,62 @@ function ViewContainer({ children, viewKey }: { children: ReactNode; viewKey: st
   );
 }
 
-function DashboardView({ user, modules, setView, setActiveModule, handleLogout, overallProgress }: any) {
+function DashboardView({ user, courses, activeCourse, setActiveCourse, modules, activeModule, setView, setActiveModule, handleLogout, overallProgress, fetchModules, isRefreshing }: any) {
+  if (!activeCourse && courses.length > 0) {
+    return (
+      <div className="min-h-screen bg-bg-deep font-sans flex flex-col overflow-hidden relative p-6 md:p-12">
+        <div className="max-w-7xl mx-auto w-full space-y-12 py-10">
+          <div className="space-y-4">
+            <h1 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none">
+              Seus <span className="text-brand-purple">Cursos</span>
+            </h1>
+            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Selecione uma jornada para começar.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {courses.map((course: any) => (
+              <div 
+                key={course.id}
+                onClick={() => setActiveCourse(course)}
+                className="group relative rounded-[40px] bg-white/5 border border-white/10 overflow-hidden cursor-pointer hover:bg-white/[0.08] transition-all active:scale-[0.98]"
+              >
+                <div className="h-48 w-full relative">
+                  <img src={course.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt={course.title} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-transparent" />
+                </div>
+                <div className="p-8 space-y-4">
+                  <h3 className="text-2xl font-black uppercase tracking-tight">{course.title}</h3>
+                  <p className="text-slate-400 font-medium text-sm leading-relaxed line-clamp-2">{course.description}</p>
+                  <div className="flex items-center gap-2 text-brand-purple text-[10px] font-black uppercase tracking-widest pt-2">
+                    Acessar Conteúdo <ChevronRight size={14} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-bg-deep font-sans flex flex-col overflow-hidden relative">
-      {/* Header with Admin shortcut if applicable */}
-      {user?.is_admin === 1 && (
-        <div className="p-4 flex justify-end max-w-7xl mx-auto w-full">
+      <div className="absolute top-0 right-0 p-6 flex gap-4 z-50">
+        <button 
+          onClick={() => setActiveCourse(null)}
+          className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all"
+        >
+          <ChevronLeft size={14} /> Mudar Curso
+        </button>
+        {user?.is_admin === 1 && (
           <button 
             onClick={() => setView('admin')}
             className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all"
           >
-            <ShieldCheck size={14} className="text-brand-purple" /> Painel Admin
+            <ShieldCheck size={14} className="text-brand-purple" /> Admin
           </button>
-        </div>
-      )}
+        )}
+      </div>
       <div className="flex-1 overflow-y-auto no-scrollbar pb-24">
         <div className="p-6 md:p-12 max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 lg:gap-12 pt-8 md:pt-12">
           
@@ -142,25 +185,45 @@ function DashboardView({ user, modules, setView, setActiveModule, handleLogout, 
             </span>
             
             <h1 className="text-4xl md:text-6xl xl:text-7xl font-black uppercase leading-[0.9] tracking-tighter">
-              Landing Page <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-pink">Master IA</span>
+              {activeCourse?.title || 'Landing Pages com IA'} <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-purple to-brand-pink text-2xl md:text-4xl block mt-2">
+                {activeCourse?.id === 1 ? 'Engenharia de Prompt do Zero ao Profissional' : activeCourse?.description}
+              </span>
             </h1>
 
             <p className="text-slate-400 font-medium text-base md:text-lg max-w-md leading-relaxed">
-              Domine a engenharia de prompt e crie páginas profissionais do zero absoluto ao lançamento profissional.
+              Aprenda a criar landing pages profissionais usando Inteligência Artificial, prompts avançados e ferramentas modernas sem precisar programar.
             </p>
+
+            <div className="bg-white/5 border border-white/10 p-6 rounded-3xl space-y-4">
+               <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-slate-500">
+                  <span>Seu Progresso de Maestria</span>
+                  <span className="text-brand-purple">{Math.round(overallProgress)}%</span>
+               </div>
+               <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${overallProgress}%` }}
+                    className="h-full bg-gradient-to-r from-brand-purple to-brand-pink"
+                  />
+               </div>
+            </div>
 
             <button 
               onClick={() => {
-                const nextModule = modules.find((m: any) => !m.passed && !m.locked) || modules[0];
-                if (nextModule) {
-                  setActiveModule(nextModule);
+                if (modules.length === 0) {
+                   fetchModules();
+                   return;
+                }
+                const m = activeModule || modules.find((m: any) => !m.passed && !m.locked) || modules[0];
+                if (m) {
+                  setActiveModule(m);
                   setView('lesson');
                 }
               }}
               className="mt-4 px-10 py-5 bg-gradient-to-r from-brand-purple to-brand-pink text-white font-black uppercase text-sm tracking-widest rounded-3xl hover:opacity-90 transition-all flex items-center justify-center gap-4 w-full md:w-fit shadow-[0_20px_40px_rgba(99,102,241,0.2)] group"
             >
-              Continuar Estudo
+              {modules.length === 0 ? (isRefreshing ? 'Iniciando...' : 'Carregar Curso') : 'Começar Estudos'}
               <Rocket size={20} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
@@ -332,15 +395,31 @@ export default function App() {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [selectedProject, setSelectedProject] = useState<null | { title: string, desc: string, stack: string[], features: string[], logic: string }>(null);
   const [modules, setModules] = useState<any[]>([]);
+  const [courses, setCourses] = useState<any[]>([]);
+  const [activeCourse, setActiveCourse] = useState<any>(null);
   const [activeModule, setActiveModule] = useState<any>(null);
+
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     // Progress check
     if (user && view !== 'landing') {
       fetchProgress();
-      fetchModules();
+      fetchCourses();
+      fetchModules(activeCourse?.id);
     }
-  }, [user !== null]);
+  }, [user, view, activeCourse?.id]);
+
+  // Periodically refresh modules if they are empty (useful if DB was initializing)
+  useEffect(() => {
+    if (user && view !== 'landing' && modules.length === 0 && !isRefreshing) {
+      const timer = setInterval(() => {
+        fetchModules(activeCourse?.id);
+        fetchCourses();
+      }, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [user, view, modules.length, isRefreshing, activeCourse?.id]);
 
   // Check auth session on mount
   useEffect(() => {
@@ -354,6 +433,7 @@ export default function App() {
             setUser(data.user);
             setView('dashboard');
             fetchProgress();
+            fetchCourses();
           }
         } else {
           setUser(null);
@@ -370,6 +450,16 @@ export default function App() {
     checkAuth();
   }, []);
 
+  // Auto-set active module when modules are loaded
+  useEffect(() => {
+    if (modules.length > 0 && !activeModule) {
+      const nextModule = modules.find((m: any) => !m.passed && !m.locked) || modules[0];
+      if (nextModule) {
+        setActiveModule(nextModule);
+      }
+    }
+  }, [modules, activeModule]);
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -382,15 +472,33 @@ export default function App() {
     return Math.round((passedCount / modules.length) * 100);
   }, [modules]);
 
-  const fetchModules = async () => {
+
+  const fetchCourses = async () => {
     try {
-      const res = await fetch('/api/modules', { credentials: 'include' });
+      const res = await fetch("/api/courses", { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setCourses(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch courses");
+    }
+  };
+
+  const fetchModules = async (courseId?: number) => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      const url = courseId ? `/api/modules?courseId=${courseId}` : "/api/modules";
+      const res = await fetch(url, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         setModules(data);
       }
     } catch (e) {
       console.error("Failed to fetch modules", e);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -455,6 +563,8 @@ export default function App() {
         setUser(data.user);
         setView('dashboard');
         fetchProgress();
+        fetchCourses();
+        fetchModules(activeCourse?.id);
       }
     }
   };
@@ -562,7 +672,7 @@ export default function App() {
                     <button
                       key={item.id}
                       onClick={() => {
-                        setView(item.id);
+                        setView(item.id as any);
                         setIsSidebarOpen(false);
                       }}
                       className={`w-full flex items-center gap-4 p-5 rounded-2xl transition-all ${
@@ -634,12 +744,17 @@ export default function App() {
           {view === 'dashboard' && (
             <DashboardView 
               user={user}
+              courses={courses}
+              activeCourse={activeCourse}
+              setActiveCourse={setActiveCourse}
               modules={modules}
+              activeModule={activeModule}
               setView={setView}
               setActiveModule={setActiveModule}
               handleLogout={handleLogout}
               overallProgress={overallProgress}
               fetchModules={fetchModules}
+              isRefreshing={isRefreshing}
             />
           )}
 
@@ -672,8 +787,8 @@ export default function App() {
                     </div>
                     
                     <div className="p-8 md:p-12 bg-white/5 border border-white/10 rounded-[48px] text-base md:text-lg leading-relaxed text-slate-300 backdrop-blur-md">
-                       <div className="whitespace-pre-wrap font-medium">
-                        {activeModule.content || activeModule.description || "Iniciando estudos deste módulo..."}
+                       <div className="prose prose-invert max-w-none prose-p:leading-relaxed prose-h1:font-black prose-h2:font-black prose-h3:font-bold prose-strong:text-brand-purple prose-li:text-slate-400">
+                         <ReactMarkdown>{activeModule.content || activeModule.description || "Iniciando estudos deste módulo..."}</ReactMarkdown>
                        </div>
                     </div>
 

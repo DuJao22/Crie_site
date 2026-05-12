@@ -19,10 +19,183 @@ const CONNECTION_STRING = process.env.SQLITE_CLOUD_CONNECTION_STRING;
 // Note: We'll initialize it properly inside startServer after checking the connection string
 let db: Database | null = null;
 
+// Fallback modules with complete curriculum and questions
+const STATIC_MODULES = [
+  { 
+    id: 1,
+    title: "MÓDULO 1 — Introdução à Engenharia de Prompt", 
+    desc: "Explica o que é engenharia de prompt e como IA entende comandos.", 
+    img: "https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=800&auto=format&fit=crop",
+    content: `# MÓDULO 1: Domine a Mente da Máquina\n\nEste não é apenas um curso de "digitar textinho". Você está prestes a aprender como hackear a produtividade mundial usando Engenharia de Prompt.\n\n## 1. O que é Engenharia de Prompt? (AULA COMPLETA)\nEngenharia de Prompt é a ciência de estruturar comunicações para modelos de linguagem. Imagine que a IA é um gênio da lâmpada: se você pedir "dinheiro", ela pode te dar uma moeda de 1 centavo. Se você pedir "1 milhão de dólares em notas de 100 dentro de uma maleta preta na minha mesa agora", você consegue exatamente o que quer. \n\n### O Segredo dos Tokens\nA IA processa texto em pequenos pedaços chamados tokens. Cada palavra, espaço ou sinal de pontuação conta. Quando você é vago, a IA preenche as lacunas com o que é "estatisticamente mais provável", o que geralmente é o senso comum medíocre.\n\n## 2. Como a IA cria Landing Pages?\nEla não "desenha" como um humano. Ela escreve o **blueprint** da página. Ela entende que uma Landing Page precisa de um fluxo lógico (AIDA: Atenção, Interesse, Desejo, Ação). Quando ferramentas como Lovable interpretam seu prompt, elas estão transformando sua descrição em componentes de código reais.\n\n## 3. Ferramentas que você vai usar\n- **GitHub:** Sua conta bancária de código. Sem ele, você é apenas um amador. Com ele, você é um desenvolvedor.\n- **Lovable/Bolt:** Seus braços direitos. Eles fazem o trabalho pesado de codificação.\n- **Vercel:** O palco principal. Aqui seu site ganha vida para o mundo.\n\n--- \n*Dica de Ouro: Nunca peça para a IA "fazer um site". Peça para ela "atuar como um designer de conversão sênior".*`,
+    free: 1,
+    qs: [
+      { q: "O que define a Engenharia de Prompt?", o: ["Codificar em binário", "Estruturar comandos para obter resultados precisos", "Desenhar layouts manualmente", "Instalar programas de IA"], c: 1 },
+      { q: "Como a IA interpreta o texto?", o: ["Pelas cores", "Através de sentimentos", "Usando tokens e probabilidade estatística", "Lendo a mente do usuário"], c: 2 },
+      { q: "O que acontece se você for vago no prompt?", o: ["A IA melhora o resultado sozinha", "O resultado será genérico e medíocre", "O computador trava", "Nada, a IA é perfeita"], c: 1 },
+      { q: "Para que serve o GitHub?", o: ["Para postar fotos", "Para salvar e versionar projetos de forma profissional", "Como um chat de suporte", "Para comprar domínios"], c: 1 },
+      { q: "O que é um 'Token'?", o: ["Uma senha de banco", "A menor unidade de processamento de texto da IA", "Um tipo de vírus", "O nome do modelo de IA"], c: 1 },
+      { q: "Qual a função do Vercel?", o: ["Criar o código", "Hospedar o site e publicá-lo online", "Gerar prompts", "Editar vídeos"], c: 1 },
+      { q: "O que ferramentas como Lovable fazem?", o: ["Apenas escrevem textos", "Transformam prompts em código e design funcional", "Limpam o cache do navegador", "Geram senhas"], c: 1 },
+      { q: "O que é AIDA no contexto de Landing Pages?", o: ["Um tipo de código", "Atenção, Interesse, Desejo e Ação", "Um plugin do Chrome", "Nome de uma IA russa"], c: 1 },
+      { q: "Por que definir uma 'Persona' (como Designer Sênior) ajuda?", o: ["Deixa a IA mais lenta", "Dá um contexto de qualidade e tom de voz à IA", "Não ajuda em nada", "É apenas para o usuário se sentir bem"], c: 1 },
+      { q: "IA substitui totalmente o pensamento humano?", o: ["Sim, em 100% dos casos", "Não, o humano guia a estratégia e o refinamento", "Depende da velocidade da internet", "Sim, se o prompt for curto"], c: 1 }
+    ]
+  },
+  { 
+    id: 2,
+    title: "MÓDULO 2 — Estrutura de uma Landing Page Profissional", 
+    desc: "Ensinar a estrutura correta de uma landing page.", 
+    img: "https://images.unsplash.com/photo-1551288049-bbbda536ad37?q=80&w=800&auto=format&fit=crop",
+    content: `# MÓDULO 2: A Anatomia da Conversão Extrema\n\nUma Landing Page (LP) não é um site institucional. Uma LP tem uma missão única: **CONVERTER**. Se ela tem muitos links para outras páginas, ela falhou.\n\n## 1. Hero Section: Onde o Dinheiro é Feito\nVocê tem menos de 3 segundos para prender a atenção. A Hero Section precisa de:\n- **Headline:** Deve matar uma dor ou prometer um prazer imediato.\n- **Subheadline:** Explica o "como" de forma rápida.\n- **CTA (Call to Action):** O botão deve ser impossível de ignorar.\n\n## 2. A Hierarquia Visual\nO olho humano lê em padrão "F" ou "Z". Coloque as informações mais importantes (Logo, Headline, CTA) seguindo esse fluxo natural.\n\n## 3. Prova Social: O Efeito Manada\nO ser humano é social. Se ninguém mais comprou, ele não compra. Estampe depoimentos, logotipos de clientes famosos e números de resultados logo no início da página.\n\n## 4. Benefícios vs Características (ERRO COMUM)\n- **Característica:** "Este carro tem 200 cavalos".\n- **Benefício:** "Sinta o poder da aceleração e nunca mais se sinta inseguro em uma ultrapassagem".\n*Venda a transformação, não o objeto.*\n\n## 5. FAQ e Rodapé\nO FAQ não é só para perguntas. É para eliminar objeções finais. "Tem garantia?", "É seguro?", "Serve para mim?".`,
+    free: 1,
+    qs: [
+      { q: "Qual a missão principal de uma Landing Page?", o: ["Mostrar a história da empresa", "Ter muitos links úteis", "Converter o visitante em lead ou cliente", "Ser apenas bonita"], c: 2 },
+      { q: "Quanto tempo você tem para prender a atenção na Hero Section?", o: ["30 segundos", "Menos de 3 segundos", "5 minutos", "O tempo que o usuário quiser"], c: 1 },
+      { q: "O deve conter uma Headline eficaz?", o: ["O CNPJ da empresa", "Uma promessa de valor clara ou solução de dor", "O menu do site", "Uma lista de parceiros"], c: 1 },
+      { q: "Para que serve a Prova Social?", o: ["Para deixar o site colorido", "Para gerar confiança e autoridade através de outros usuários", "Para aumentar o tempo de carregamento", "Não serve para nada"], c: 1 },
+      { q: "Qual a diferença entre Benefício e Característica?", o: ["Não há diferença", "Característica foca no item, Benefício foca na transformação", "Benefício é o nome do produto", "Característica é o preço"], c: 1 },
+      { q: "O que é o padrão de leitura em 'F'?", o: ["Um tipo de fonte", "A forma como os olhos percorrem a página no início", "Um erro de design", "Uma técnica de pintura"], c: 1 },
+      { q: "O que é um CTA?", o: ["Central de Tráfego", "Chamada para Ação (Botão principal)", "Código de Texto Antigo", "Curso de Tecnologia Aplicada"], c: 1 },
+      { q: "Por que o FAQ é importante?", o: ["Para encher a página", "Para quebrar objeções e tirar dúvidas finais", "Para esconder informações", "Para links patrocinados"], c: 1 },
+      { q: "Onde deve ficar o botão principal na Hero Section?", o: ["Escondido no rodapé", "Em destaque, geralmente logo abaixo da headline/subheadline", "No topo da página, bem pequeno", "Dentro de uma imagem"], c: 1 },
+      { q: "Se uma página tem 20 botões diferentes apontando para lugares diferentes, ela é...", o: ["Uma excelente Landing Page", "Um site institucional ou portal, mas falha como LP", "Muito moderna", "Otimizada para SEO"], c: 1 }
+    ]
+  },
+  { 
+    id: 3,
+    title: "MÓDULO 3 — Criando Prompts Profissionais", 
+    desc: "Ensinar prompts detalhados para gerar páginas melhores.", 
+    img: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=800&auto=format&fit=crop",
+    content: `# MÓDULO 3: A Técnica do Prompt Estruturado\n\nNeste módulo, saímos do amadorismo. Você vai aprender a "framework" de prompt que os profissionais de US$ 500/hora usam.\n\n## 1. A Framework C.R.O.P.S.\n- **C (Contexto):** "Você é um designer UI/UX focado em SaaS B2B."\n- **R (Role/Papel):** "Atue como o líder criativo da Apple."\n- **O (Objetivo):** "Crie uma landing page minimalista para um app de meditação."\n- **P (Parâmetros):** "Use cores pastéis, bordas ultra-arredondadas e fontes Serifadas."\n- **S (Saída):** "Gere o código React com Tailwind CSS."\n\n## 2. Refinamento Iterativo\nSe a IA gerar algo que você não gostou, não mude o prompt inteiro. Use ajustes: "Aumente o espaçamento entre as seções" ou "Transforme o botão em um gradiente de laranja para rosa".\n\n## 3. Prompts por Nicho\nVocê aprenderá a criar prompts específicos para:\n- **SaaS:** Foco em features e planos.\n- **E-commerce:** Foco em produto e urgência.\n- **Institucional:** Foco em história e serviços.\n- **Captura de Lead:** Foco total no formulário simplificado.`,
+    free: 1,
+    qs: [
+      { q: "O que significa o 'C' na framework C.R.O.P.S.?", o: ["Cor", "Contexto", "Código", "Curso"], c: 1 },
+      { q: "Qual a importância de definir um 'Papel' (Role) para a IA?", o: ["Nenhuma", "Define o tom e a qualidade técnica da resposta", "Deixa a resposta mais curta", "É apenas decorativo"], c: 1 },
+      { q: "O que são 'Parâmetros' no prompt?", o: ["O preço do site", "Restrições visuais, cores, fontes, estilos", "O nome do cliente", "A senha do servidor"], c: 1 },
+      { q: "Como fazer um refinamento iterativo?", o: ["Apagando tudo e começando do zero", "Dando comandos de pequenos ajustes sucessivos", "Gritando com o computador", "Pedindo para a IA parar"], c: 1 },
+      { q: "Qual the foco de uma LP de Captura de Leads?", o: ["Mostrar muitas fotos de viagem", "Foco total no formulário e na promessa de valor", "Explicar 50 benefícios", "Vendas diretas com checkout"], c: 1 },
+      { q: "O que é 'Refinamento'?", o: ["Não mexer mais na página", "Ajustar detalhes para atingir a perfeição", "Mudar de nicho", "Pedir reembolso"], c: 1 },
+      { q: "Para que serve o 'S' (Saída) no C.R.O.P.S.?", o: ["Para sair do chat", "Para formatar como você quer receber a resposta", "Para salvar o prompt", "Para assinar o curso"], c: 1 },
+      { q: "Em um prompt de SaaS, o que é fundamental?", o: ["Fotos de comida", "Seção de Features e Tabela de Planos", "História do criador", "Links para redes sociais"], c: 1 },
+      { q: "Qual a vantagem de usar prompts específicos por nicho?", o: ["Resultados mais assertivos e alinhados com o público", "Economiza energia", "A IA trabalha mais rápido", "O GitHub prefere assim"], c: 0 },
+      { q: "O que o 'O' do C.R.O.P.S representa?", o: ["Organização", "Objetivo (o que deve ser feito)", "Obrigação", "Otimização"], c: 1 }
+    ]
+  },
+  { 
+    id: 4,
+    title: "MÓDULO 4 — Criando Landing Pages com IA", 
+    desc: "Ensinar geração prática.", 
+    img: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=800&auto=format&fit=crop",
+    content: `# MÓDULO 4: Mão na Massa com Lovable\n\nFinalmente! Vamos gerar sua primeira página profissional. \n\n## 1. Configurando o Ambiente\nPrimeiro, você deve conectar seu GitHub ao Lovable. Isso garante que cada alteração que você fizer seja salva como um "commit". \n\n## 2. O Prompt Final\nUsaremos este prompt: "Crie uma landing page premium para um curso de tráfego pago. Use Dark Mode, gradientes violetas, depoimentos em cards flutuantes e um formulário de inscrição minimalista."\n\n## 3. O Refinamento Profissional\nPeça para a IA:\n- "Adicione uma seção de FAQ com acordeão."\n- "Mude as cores para um tema futurista azul petróleo."\n- "Certifique-se de que o botão de CTA tenha uma animação de pulso."`,
+    free: 0,
+    qs: [
+      { q: "Qual ferramenta principal usamos para gerar as páginas visualmente?", o: ["Photoshop", "Lovable", "Paint", "Excel"], c: 1 },
+      { q: "Por que conectar o GitHub ao Lovable?", o: ["Para que a IA possa ler seus e-mails", "Para salvar e versionar automaticamente cada mudança no código", "Para ganhar seguidores", "Não é necessário conectar"], c: 1 },
+      { q: "O que é um 'Commit'?", o: ["Um tipo de erro", "Um registro de alteração salva no projeto", "Um botão de deletar", "Uma nova aba do navegador"], c: 1 },
+      { q: "Como pedir um ajuste de cor específico?", o: ["Apagando o projeto", "Através de um novo comando no chat (ex: 'Mude para azul petróleo')", "Pintando a tela", "Reiniciando o computador"], c: 1 },
+      { q: "O que 'Dark Mode' significa no design?", o: ["Site fora do ar", "Interface com fundo escuro e textos claros", "Site que só abre à noite", "Modo de segurança"], c: 1 },
+      { q: "Para que serve a animação de pulso em um botão?", o: ["Para irritar o usuário", "Para chamar atenção visual para o CTA", "Para o site carregar mais rápido", "Para economizar bateria"], c: 1 },
+      { q: "O que é um 'Acordeão' em uma seção de FAQ?", o: ["Um instrumento musical", "Um componente que expande e retrai para mostrar o texto", "Um tipo de imagem", "Um menu lateral"], c: 1 },
+      { q: "Você precisa saber programar do zero para usar o Lovable?", o: ["Sim, obrigatoriamente", "Não, a IA cuida do código enquanto você guia com prompts", "Sim, precisa saber C++", "Não, mas precisa saber latim"], c: 1 },
+      { q: "Qual o resultado de um prompt bem estruturado no Lovable?", o: ["Um erro 404", "Uma página profissional, funcional e responsiva", "Um arquivo PDF", "Uma imagem estática"], c: 1 },
+      { q: "O que fazer se a primeira geração não for perfeita?", o: ["Desistir", "Usar prompts de refinamento detalhados", "Tirar um print e usar assim mesmo", "Pedir para um humano fazer"], c: 1 }
+    ]
+  },
+  { 
+    id: 5,
+    title: "MÓDULO 5 — Estrutura Visual Premium", 
+    desc: "Crie páginas com design moderno e tendências de 2024.", 
+    img: "https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=800&auto=format&fit=crop",
+    content: "# MÓDULO 5: Design que Impressiona\n\nEsqueça sites com cara de 2010. Aqui você aprende Glassmorphism, Neumorphism e as tendências visuais que dominam o mercado hoje.",
+    free: 0 
+  },
+  { 
+    id: 6,
+    title: "MÓDULO 6 — IA + Copywriting", 
+    desc: "Aprenda a criar textos que vendem com ajuda da IA.", 
+    img: "https://images.unsplash.com/photo-1455849318743-b2233052fcff?q=80&w=800&auto=format&fit=crop",
+    content: "# MÓDULO 6: Palavras que Vendem\n\nA Headline é 80% do trabalho. Aprenda a usar a IA para gerar variações de títulos irresistíveis e gatilhos mentais poderosos.",
+    free: 0 
+  },
+  { 
+    id: 7,
+    title: "MÓDULO 7 — Domínio Profissional do GitHub", 
+    desc: "Organize seus projetos como um desenvolvedor real.", 
+    img: "https://images.unsplash.com/photo-1618401471353-b98aade1229a?q=80&w=800&auto=format&fit=crop",
+    content: "# MÓDULO 7: Profissionalismo com GitHub\n\nEntenda Repositórios e Versionamento. Aprenda a organizar sua biblioteca de sites para clientes de forma segura e profissional.",
+    free: 0 
+  },
+  { 
+    id: 8,
+    title: "MÓDULO 8 — Hospedagem e Publicação Grátis", 
+    desc: "Coloque sua página no ar para o mundo todo ver.", 
+    img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop",
+    content: "# MÓDULO 8: Colocando no Ar\n\nDeploy em 1 clique com Vercel. Seu site online com SSL gratuito para sempre e performance de ponta.",
+    free: 0 
+  },
+  { 
+    id: 9,
+    title: "MÓDULO 9 — Landing Pages Avançadas (SaaS e Apps)", 
+    desc: "Crie estruturas complexas para softwares.", 
+    img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop",
+    content: "# MÓDULO 9: Landing Pages SaaS\n\nAprenda a criar páginas para softwares e aplicativos mobile que exigem um nível de design e funcionalidade superior.",
+    free: 0 
+  },
+  { 
+    id: 10,
+    title: "MÓDULO 10 — O Negócio Freelancer de Landing Pages", 
+    desc: "Como monetizar suas novas habilidades.", 
+    img: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?q=80&w=800&auto=format&fit=crop",
+    content: "# MÓDULO 10: O Negócio Profissional\n\nComo cobrar o valor justo pelo seu trabalho e como entregar projetos em tempo recorde usando o poder da IA.",
+    free: 0 
+  },
+  { 
+    id: 11,
+    title: "MÓDULO 11 — Prompts Premium Secretos", 
+    desc: "Acesse minha biblioteca pessoal de prompts de elite.", 
+    img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop",
+    content: "# MÓDULO 11: Prompts de Elite\n\nComandos avançados que geram resultados que parecem ter sido feitos por grandes agências de design.",
+    free: 0 
+  },
+  { 
+    id: 12,
+    title: "MÓDULO 12 — Projeto Final e Portfólio", 
+    desc: "Crie seu projeto mestre e publique seu portfólio.", 
+    img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop",
+    content: "# MÓDULO 12: Seu Diploma Prático\n\nCrie, publique e mostre ao mundo sua Landing Page de alta performance, pronta para atrair seus primeiros clientes.",
+    free: 0 
+  },
+  { 
+    id: 13,
+    title: "BÔNUS 1 — Biblioteca de 100 Prompts Prontos", 
+    desc: "Acelere sua criação com comandos validados.", 
+    img: "https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?q=80&w=800&auto=format&fit=crop",
+    content: "🚀 100 prompts prontos para copiar e colar, cobrindo diversos nichos e estilos visuais.",
+    free: 0 
+  },
+  { 
+    id: 14,
+    title: "BÔNUS 2 — Templates Premium de Base", 
+    desc: "Estruturas prontas para você começar.", 
+    img: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?q=80&w=800&auto=format&fit=crop",
+    content: "🚀 Seleção de templates de alta conversão para você usar como ponto de partida em qualquer projeto.",
+    free: 0 
+  },
+  { 
+    id: 15,
+    title: "BÔNUS 3 — Estrutura de Agência de IA", 
+    desc: "Como escalar e gerir múltiplos clientes.", 
+    img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop",
+    content: "🚀 Como vender serviços recorrentes, gerir expectativas de clientes e escalar seu negócio usando IA.",
+    free: 0 
+  }
+];
+
+
 async function initDatabase() {
   if (!CONNECTION_STRING) {
-    console.error("SQLITE_CLOUD_CONNECTION_STRING is missing in environment variables.");
-    process.exit(1);
+    console.warn("SQLITE_CLOUD_CONNECTION_STRING is missing in environment variables. Database features will be unavailable.");
+    return;
   }
 
   try {
@@ -70,15 +243,28 @@ async function initDatabase() {
     `;
 
     await db.sql`
+      CREATE TABLE IF NOT EXISTS courses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        description TEXT,
+        image_url TEXT,
+        order_index INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `;
+
+    await db.sql`
       CREATE TABLE IF NOT EXISTS modules (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        course_id INTEGER,
         title TEXT NOT NULL,
         description TEXT,
         content TEXT,
         image_url TEXT,
         is_free INTEGER DEFAULT 1,
         order_index INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (course_id) REFERENCES courses (id)
       );
     `;
 
@@ -106,141 +292,45 @@ async function initDatabase() {
       );
     `;
 
-    // Bootstrap Initial Modules for the New Landing Page Course
-    const existingModules = await db.sql`SELECT COUNT(*) as count FROM modules`;
-    // Force replacement with the exact 15 modules curriculum (12 modules + 3 bonuses)
-    if ((existingModules[0] as any).count !== 15) {
-      console.log("Replacing course modules with new 15-module curriculum (12 modules + 3 bonuses)...");
+    // Bootstrap Initial Courses and Modules
+    const coursesCount = await db.sql`SELECT COUNT(*) as count FROM courses`;
+    if ((coursesCount[0] as any).count === 0) {
+      console.log("Bootstrapping initial course: Introdução...");
       try {
+        const courseRes = await db.sql`INSERT INTO courses (title, description, image_url, order_index) VALUES (
+          'Introdução', 
+          'A base fundamental para dominar a IA e criar Landing Pages de alta conversão.', 
+          'https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=800&auto=format&fit=crop', 
+          0
+        )`;
+        const courseId = (courseRes as any).lastID || 1;
+
+        console.log("Replacing course modules with new 15-module curriculum...");
         await db.sql`DELETE FROM quiz_results`;
         await db.sql`DELETE FROM questions`;
         await db.sql`DELETE FROM modules`;
-      } catch (e) {
-        console.log("Tables might not exist yet or empty.");
-      }
 
-      const courseModules = [
-        { 
-          title: "MÓDULO 1 — Introdução à Engenharia de Prompt", 
-          desc: "Explica o que é engenharia de prompt e como IA entende comandos.", 
-          img: "https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=800&auto=format&fit=crop",
-          content: "🎯 Objetivo: Explicar o que é engenharia de prompt e como IA entende comandos.\n\n📚 Aulas:\nAula 1 — O que é Engenharia de Prompt\nAula 2 — Como IA Cria Landing Pages\nAula 3 — Ferramentas Necessárias (GitHub, Lovable, Bolt.new, v0, Vercel)",
-          free: 1 
-        },
-        { 
-          title: "MÓDULO 2 — Estrutura de uma Landing Page Profissional", 
-          desc: "Ensinar a estrutura correta de uma landing page e gatilhos de conversão.", 
-          img: "https://images.unsplash.com/photo-1551288049-bbbda536ad37?q=80&w=800&auto=format&fit=crop",
-          content: "🎯 Objetivo: Ensinar a estrutura correta de uma landing page.\n\n📚 Aulas:\nAula 1 — Anatomia de uma Landing Page (Hero, CTA, Benefícios, FAQ...)\nAula 2 — Psicologia de Conversão (Gatilhos mentais, escassez, autoridade)\nAula 3 — Design que Converte (Hierarquia visual, espaçamento, UX/UI)",
-          free: 1 
-        },
-        { 
-          title: "MÓDULO 3 — Criando Prompts Profissionais", 
-          desc: "Ensinar prompts detalhados para gerar páginas melhores por nicho.", 
-          img: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=800&auto=format&fit=crop",
-          content: "🎯 Objetivo: Ensinar prompts detalhados para gerar páginas melhores.\n\n📚 Aulas:\nAula 1 — Estrutura de Prompt Profissional\nAula 2 — Prompt Básico vs Avançado\nAula 3 — Prompts Estruturados (Barbearia, Restaurante, Agência, SaaS...)",
-          free: 1 
-        },
-        { 
-          title: "MÓDULO 4 — Criando Landing Pages com IA", 
-          desc: "Ensinar geração prática usando a ferramenta Lovable.", 
-          img: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?q=80&w=800&auto=format&fit=crop",
-          content: "🎯 Objetivo: Ensinar geração prática.\n\n📚 Aulas:\nAula 1 — Criando Conta e Integração GitHub\nAula 2 — Gerando Primeira Página\nAula 3 — Refinando Resultado",
-          free: 0 
-        },
-        { 
-          title: "MÓDULO 5 — Estrutura Visual Premium", 
-          desc: "Criar páginas modernas com design premium e responsividade.", 
-          img: "https://images.unsplash.com/photo-1558655146-d09347e92766?q=80&w=800&auto=format&fit=crop",
-          content: "🎯 Objetivo: Criar páginas modernas.\n\n📚 Aulas:\nAula 1 — Design Premium (Glassmorphism, Gradientes, Sombras)\nAula 2 — Dark Mode\nAula 3 — Responsividade (Mobile First)",
-          free: 0 
-        },
-        { 
-          title: "MÓDULO 6 — IA + Copywriting", 
-          desc: "Ensinar a criar headlines e CTAs que realmente vendem.", 
-          img: "https://images.unsplash.com/photo-1455849318743-b2233052fcff?q=80&w=800&auto=format&fit=crop",
-          content: "🎯 Objetivo: Ensinar páginas que vendem.\n\n📚 Aulas:\nAula 1 — Headlines Fortes\nAula 2 — CTA Profissional\nAula 3 — Estrutura de Conversão (Problema-Solução-Benefício)",
-          free: 0 
-        },
-        { 
-          title: "MÓDULO 7 — GitHub", 
-          desc: "Salvar e versionar seus projetos de forma profissional.", 
-          img: "https://images.unsplash.com/photo-1618401471353-b98aade1229a?q=80&w=800&auto=format&fit=crop",
-          content: "🎯 Objetivo: Salvar projetos profissionalmente.\n\n📚 Aulas:\nAula 1 — Criando Conta GitHub\nAula 2 — Repositórios (commits, push, versionamento)\nAula 3 — Integração IA + GitHub",
-          free: 0 
-        },
-        { 
-          title: "MÓDULO 8 — Hospedagem Grátis", 
-          desc: "Publicar suas páginas online e configurar domínios.", 
-          img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop",
-          content: "🎯 Objetivo: Publicar páginas online.\n\n📚 Aulas:\nAula 1 — Deploy na Vercel\nAula 2 — Domínio (grátis e personalizado)\nAula 3 — Atualizações Automáticas",
-          free: 0 
-        },
-        { 
-          title: "MÓDULO 9 — Landing Pages Avançadas", 
-          desc: "Criação de páginas para nichos específicos e fluxos de venda.", 
-          img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop",
-          content: "🎯 Objetivo: Criar páginas mais profissionais.\n\n📚 Aulas:\nAula 1 — Landing Page SaaS\nAula 2 — Página de Produto\nAula 3 — Página de Captura\nAula 4 — Página de Checkout",
-          free: 0 
-        },
-        { 
-          title: "MÓDULO 10 — Estrutura Freelancer", 
-          desc: "Como vender seus serviços, precificar e escalar sua produção.", 
-          img: "https://images.unsplash.com/photo-1553729459-efe14ef6055d?q=80&w=800&auto=format&fit=crop",
-          content: "🎯 Objetivo: Ensinar monetização.\n\n📚 Aulas:\nAula 1 — Como Vender Landing Pages\nAula 2 — Precificação\nAula 3 — Escalando com IA",
-          free: 0 
-        },
-        { 
-          title: "MÓDULO 11 — Prompts Premium", 
-          desc: "Prompts extremamente profissionais para resultados de alto nível.", 
-          img: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop",
-          content: "🎯 Objetivo: Criar prompts extremamente profissionais.\n\n📚 Aulas:\nAula 1 — Estrutura Master Prompt\nAula 2 — Prompt para Conversão\nAula 3 — Prompt para SaaS\nAula 4 — Prompt para E-commerce",
-          free: 0 
-        },
-        { 
-          title: "MÓDULO 12 — Projeto Final", 
-          desc: "Construção de uma LP Premium completa do zero ao deploy.", 
-          img: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop",
-          content: "🎯 Objetivo: Criar projeto completo.\n\n📚 Projeto:\nLanding Page Premium Completa com Hero, CTA, FAQ, Depoimentos e Responsividade Total.",
-          free: 0 
-        },
-        { 
-          title: "BÔNUS 1 — Biblioteca de Prompts", 
-          desc: "Mais de 100 prompts prontos para acelerar sua vida.", 
-          img: "https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?q=80&w=800&auto=format&fit=crop",
-          content: "🚀 100 prompts prontos para diversos nichos e necessidades.",
-          free: 0 
-        },
-        { 
-          title: "BÔNUS 2 — Templates Premium", 
-          desc: "Estruturas verificadas que você pode clonar.", 
-          img: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?q=80&w=800&auto=format&fit=crop",
-          content: "🚀 Landing pages prontas para você usar como base nos seus projetos.",
-          free: 0 
-        },
-        { 
-          title: "BÔNUS 3 — Estrutura Agência", 
-          desc: "Modelos de negócio para vender Landing Pages recorrentemente.", 
-          img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop",
-          content: "🚀 Como vender serviços, gerir clientes e escalar sua própria agência.",
-          free: 0 
-        },
-      ];
+        const courseModules = STATIC_MODULES;
 
-      for (let i = 0; i < courseModules.length; i++) {
-        const m = courseModules[i];
-        const res = await db.sql`INSERT INTO modules (title, description, content, image_url, is_free, order_index) VALUES (${m.title}, ${m.desc}, ${m.content}, ${m.img}, ${m.free}, ${i})`;
-        const moduleId = (res as any).lastID || (i + 1);
+        for (let i = 0; i < courseModules.length; i++) {
+          const m = courseModules[i];
+          const res = await db.sql`INSERT INTO modules (course_id, title, description, content, image_url, is_free, order_index) VALUES (${courseId}, ${m.title}, ${m.desc}, ${m.content}, ${m.img}, ${m.free}, ${i})`;
+          const moduleId = (res as any).lastID || (i + 1);
 
-        // Pre-create 10 dummy questions per module to allow passing
-        for (let j = 1; j <= 10; j++) {
-          await db.sql`INSERT INTO questions (module_id, question, options, correct_option) VALUES (
-            ${moduleId}, 
-            'Pergunta ${j} sobre ${m.title}?', 
-            '["Alternativa A", "Alternativa B", "Alternativa C", "Alternativa D"]', 
-            0
-          )`;
+          // Use real questions if provided
+          if ((m as any).qs && (m as any).qs.length > 0) {
+            for (const q of (m as any).qs) {
+              await db.sql`INSERT INTO questions (module_id, question, options, correct_option) VALUES (
+                ${moduleId}, 
+                ${q.q}, 
+                ${JSON.stringify(q.o)}, 
+                ${q.c}
+              )`;
+            }
+          }
         }
+      } catch (innerError) {
+        console.error("Error during course bootstrap:", innerError);
       }
     }
 
@@ -293,16 +383,30 @@ async function initDatabase() {
 
   } catch (error) {
     console.error("Failed to initialize SQLite Cloud database:", error);
-    process.exit(1);
+    // Don't exit(1) if called from within background handler
   }
 }
 
 async function startServer() {
-  await initDatabase();
-  
   const app = express();
-  const PORT = process.env.PORT || 3000;
+  const PORT = 3000;
 
+  // Logging & Health first for debugging
+  app.use((req, res, next) => {
+    console.log(`[HTTP] ${new Date().toISOString()} - ${req.method} ${req.path}`);
+    next();
+  });
+
+  app.get("/api/health", (req, res) => {
+    res.json({ 
+      status: "ok", 
+      db_ready: !!db, 
+      timestamp: new Date().toISOString(),
+      env: process.env.NODE_ENV
+    });
+  });
+
+  // CORS and other middlewares
   app.use(cors({
     origin: true,
     credentials: true,
@@ -312,12 +416,10 @@ async function startServer() {
   app.use(express.json());
   app.use(cookieParser());
 
-  app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-    next();
-  });
-
-  // Helper for db access since db can be null (though unlikely after startServer awaits init)
+  // Start initialization in background
+  console.log("Database initialization logic will run after port is bound...");
+  
+  // Helper for db access since db can be null
   const getDb = () => {
     if (!db) throw new Error("Database not initialized");
     return db;
@@ -365,10 +467,6 @@ async function startServer() {
   };
 
   // --- API Routes ---
-
-  app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
-  });
 
   app.get("/api/admin/users", authenticateAdmin, async (req, res) => {
     try {
@@ -463,15 +561,42 @@ async function startServer() {
     }
   });
 
-  app.get("/api/modules", authenticateToken, async (req: any, res) => {
+  app.get("/api/courses", authenticateToken, async (req, res) => {
     try {
-      const modules = await getDb().sql`SELECT * FROM modules ORDER BY order_index ASC`;
+      if (!db) {
+        return res.json([{ id: 1, title: "Introdução", description: "O início da sua jornada.", image_url: "https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=800&auto=format&fit=crop" }]);
+      }
+      const courses = await getDb().sql`SELECT * FROM courses ORDER BY order_index ASC`;
+      res.json(courses);
+    } catch (e) {
+      res.status(500).json({ error: "Failed to fetch courses" });
+    }
+  });
+
+  app.get("/api/modules", authenticateToken, async (req: any, res) => {
+    const { courseId } = req.query;
+    try {
+      if (!db) {
+        return res.json(STATIC_MODULES);
+      }
+      
+      let query = `SELECT * FROM modules`;
+      if (courseId) {
+        query += ` WHERE course_id = ${parseInt(courseId as string)}`;
+      }
+      query += ` ORDER BY order_index ASC`;
+      
+      const modules = await getDb().sql(query as any);
+      
+      if (modules.length === 0) {
+        return res.json(STATIC_MODULES);
+      }
       const results = await getDb().sql`SELECT module_id, passed, score FROM quiz_results WHERE user_id = ${req.user.id}`;
       
       const modulesWithStatus = modules.map((m: any, idx: number) => {
         const result = results.find((r: any) => r.module_id === m.id);
         
-        // Logic: Module 0 is always unlocked. 
+        // Logic: Module 0 in a course is always unlocked. 
         // Module N is unlocked if Module N-1 was passed.
         let locked = false;
         if (idx > 0) {
@@ -499,11 +624,42 @@ async function startServer() {
   app.get("/api/modules/:id/quiz", authenticateToken, async (req, res) => {
     const { id } = req.params;
     try {
-      const questions = await getDb().sql`SELECT id, question, options FROM questions WHERE module_id = ${id}`;
-      res.json(questions.map((q: any) => ({
-        ...q,
-        options: JSON.parse(q.options)
-      })));
+      if (db) {
+        const questions = await getDb().sql`SELECT id, question, options FROM questions WHERE module_id = ${id}`;
+        if (questions.length > 0) {
+          return res.json(questions.map((q: any) => ({
+            ...q,
+            options: JSON.parse(q.options)
+          })));
+        }
+      }
+      
+      // Fallback to STATIC_MODULES questions if DB is empty or still initializing
+      const moduleId = parseInt(id);
+      const fallbackModule = STATIC_MODULES.find(m => m.id === moduleId);
+      
+      if (fallbackModule) {
+        if (fallbackModule.qs) {
+          return res.json(fallbackModule.qs.map((q, idx) => ({
+            id: (moduleId * 100) + idx,
+            question: q.q,
+            options: q.o
+          })));
+        } else {
+          // Generic questions for other modules
+          const genericQs = [];
+          for (let i = 1; i <= 10; i++) {
+            genericQs.push({
+              id: (moduleId * 100) + i,
+              question: `Pergunta de revisão ${i} sobre ${fallbackModule.title}`,
+              options: ["Opção Correta (A)", "Opção Incorreta (B)", "Opção Incorreta (C)", "Opção Incorreta (D)"]
+            });
+          }
+          return res.json(genericQs);
+        }
+      }
+
+      res.status(404).json({ error: "Quiz not found" });
     } catch (e) {
       res.status(500).json({ error: "Failed to fetch quiz" });
     }
@@ -515,12 +671,34 @@ async function startServer() {
     const userId = req.user.id;
 
     try {
-      const questions = await getDb().sql`SELECT correct_option FROM questions WHERE module_id = ${id}`;
-      if (questions.length === 0) return res.status(404).json({ error: "Quiz not found" });
+      let correctAnswers: number[] = [];
+      
+      if (db) {
+        const questions = await getDb().sql`SELECT correct_option FROM questions WHERE module_id = ${id} ORDER BY id ASC`;
+        if (questions.length > 0) {
+          correctAnswers = questions.map((q: any) => q.correct_option);
+        }
+      }
+      
+      // Fallback for verification too
+      if (correctAnswers.length === 0) {
+        const moduleId = parseInt(id);
+        const fallbackModule = STATIC_MODULES.find(m => m.id === moduleId);
+        if (fallbackModule) {
+          if (fallbackModule.qs) {
+            correctAnswers = fallbackModule.qs.map(q => q.c);
+          } else {
+            // Assume the first option (index 0) is correct for generic questions
+            correctAnswers = new Array(10).fill(0);
+          }
+        }
+      }
+
+      if (correctAnswers.length === 0) return res.status(404).json({ error: "Quiz questions not found" });
 
       let score = 0;
-      questions.forEach((q: any, idx: number) => {
-        if (answers[idx] === q.correct_option) {
+      correctAnswers.forEach((correct, idx) => {
+        if (answers[idx] === correct) {
           score++;
         }
       });
@@ -719,21 +897,39 @@ async function startServer() {
   });
 
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
+    console.log("Initializing Vite middleware...");
+    try {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+      console.log("Vite middleware initialized.");
+    } catch (e) {
+      console.error("Vite initialization failed:", e);
+    }
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
+    console.log("Serving static files from:", distPath);
     app.get("*", (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
-  app.listen(Number(PORT), "0.0.0.0", () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Starting server on port ${PORT}...`);
+  app.listen(PORT, "0.0.0.0", async () => {
+    console.log(`>>> SERVER READY AND LISTENING ON PORT ${PORT} <<<`);
+    
+    // Initialize DB after the server is up and listening
+    try {
+      console.log("Starting background database initialization...");
+      await initDatabase();
+      console.log("Database initialized successfully.");
+    } catch (error) {
+      console.error("Database background initialization FAILED:", error);
+      // We don't exit(1) here to keep the server alive for health checks/debugging
+    }
   });
 }
 

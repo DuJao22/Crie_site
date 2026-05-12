@@ -81,7 +81,7 @@ export default function QuizView({ moduleId, moduleTitle, onClose, onSuccess }: 
 
   if (questions.length === 0) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-[#09090b] p-6 text-center space-y-4">
+      <div className="flex-1 flex flex-col items-center justify-center bg-[#09090b] p-6 pb-24 md:pb-6 text-center space-y-4">
         <XCircle size={64} className="text-slate-700" />
         <h2 className="text-2xl font-black uppercase">Nenhuma pergunta encontrada</h2>
         <p className="text-slate-500 text-sm">Este módulo ainda não possui um questionário configurado.</p>
@@ -92,7 +92,7 @@ export default function QuizView({ moduleId, moduleTitle, onClose, onSuccess }: 
 
   if (result) {
     return (
-      <div className="flex-1 bg-[#09090b] flex items-center justify-center p-6">
+      <div className="flex-1 bg-[#09090b] flex items-center justify-center p-6 pb-24 md:pb-6">
         <motion.div 
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -176,21 +176,21 @@ export default function QuizView({ moduleId, moduleTitle, onClose, onSuccess }: 
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 overflow-y-auto">
-        <div className="max-w-3xl w-full space-y-12 py-10">
+      <div className="flex-1 flex items-start justify-center p-4 sm:p-12 overflow-y-auto custom-scrollbar">
+        <div className="max-w-3xl w-full space-y-6 md:space-y-12 py-6 md:py-10">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentIdx}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="space-y-10"
+              className="space-y-6 md:space-y-10"
             >
-              <h3 className="text-2xl md:text-4xl font-black uppercase tracking-tight leading-tight">
+              <h3 className="text-xl md:text-4xl font-black uppercase tracking-tight leading-tight">
                 {q.question}
               </h3>
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-3 md:gap-4">
                 {q.options.map((opt, idx) => (
                   <button
                     key={idx}
@@ -199,20 +199,20 @@ export default function QuizView({ moduleId, moduleTitle, onClose, onSuccess }: 
                       newAnswers[currentIdx] = idx;
                       setAnswers(newAnswers);
                     }}
-                    className={`p-6 rounded-3xl border text-left flex items-center gap-6 transition-all group ${
+                    className={`p-4 md:p-6 rounded-2xl md:rounded-3xl border text-left flex items-center gap-4 md:gap-6 transition-all group ${
                       answers[currentIdx] === idx 
                       ? 'bg-brand-purple/20 border-brand-purple text-white' 
                       : 'bg-white/5 border-white/10 text-slate-400 hover:bg-white/[0.08] hover:border-white/20'
                     }`}
                   >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm border transition-colors ${
+                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center font-black text-xs md:text-sm border transition-colors shrink-0 ${
                       answers[currentIdx] === idx 
                       ? 'bg-brand-purple border-brand-purple text-white shadow-[0_0_15px_rgba(99,102,241,0.5)]' 
                       : 'bg-black/20 border-white/10 group-hover:border-white/30'
                     }`}>
                       {String.fromCharCode(65 + idx)}
                     </div>
-                    <span className="font-bold text-sm md:text-base">{opt}</span>
+                    <span className="font-bold text-xs md:text-base leading-tight">{opt}</span>
                   </button>
                 ))}
               </div>
@@ -222,7 +222,7 @@ export default function QuizView({ moduleId, moduleTitle, onClose, onSuccess }: 
       </div>
 
       {/* Footer Controls */}
-      <div className="p-6 border-t border-white/5 bg-[#09090b]/80 backdrop-blur-md flex items-center justify-between">
+      <div className="p-4 md:p-6 pb-24 md:pb-6 border-t border-white/5 bg-[#09090b]/80 backdrop-blur-md flex items-center justify-between">
         <button 
           onClick={() => setCurrentIdx(prev => Math.max(0, prev - 1))}
           disabled={currentIdx === 0}

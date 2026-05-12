@@ -216,7 +216,7 @@ export default function AdminPanel({ onBack }: AdminPanelProps) {
             <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none flex items-center gap-4">
               Painel de <span className="text-brand-purple">Gerenciamento</span>
             </h1>
-            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Acesso total ao núcleo DS Company.</p>
+            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">Acesso total ao sistema LP Master.</p>
           </div>
 
           <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
