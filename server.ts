@@ -368,23 +368,37 @@ async function initDatabase() {
       }
     }
 
-    // --- Keep Alive Ping ---
-    // Pings the database every 10 minutes to prevent the free tier from sleeping
-    setInterval(async () => {
-      try {
-        if (db) {
-          await db.sql`SELECT 1`;
-          console.log(`[${new Date().toISOString()}] Database keep-alive ping successful.`);
-        }
-      } catch (e) {
-        console.error("Database keep-alive ping failed:", e);
+  // --- Keep Alive Ping ---
+  // Pings the database every 5 minutes to prevent the free tier from sleeping
+  setInterval(async () => {
+    try {
+      if (db) {
+        await db.sql`SELECT 1`;
+        console.log(`[${new Date().toISOString()}] Database keep-alive ping successful.`);
+      } else if (CONNECTION_STRING) {
+        console.log("Database was null, re-initializing...");
+        db = new Database(CONNECTION_STRING);
+        await db.sql`SELECT 1`;
       }
-    }, 10 * 60 * 1000);
-
-  } catch (error) {
-    console.error("Failed to initialize SQLite Cloud database:", error);
-    // Don't exit(1) if called from within background handler
-  }
+    } catch (e: any) {
+      console.error("Database keep-alive ping failed:", e);
+      if (CONNECTION_STRING && (e.message?.includes("unavailable") || e.message?.includes("disconnected") || e.message?.includes("connection"))) {
+        console.log("Connection lost. Attempting to re-initialize SQLite Cloud database...");
+        try {
+          db = new Database(CONNECTION_STRING);
+          await db.sql`SELECT 1`;
+          console.log("Re-connection successful.");
+        } catch (reconnectError) {
+          console.error("Re-connection failed:", reconnectError);
+          db = null; // Mark as null so next interval or request tries again
+        }
+      }
+    }
+  }, 5 * 60 * 1000);
+} catch (error) {
+  console.error("Failed to initialize SQLite Cloud database:", error);
+  // Don't exit(1) if called from within background handler
+}
 }
 
 async function startServer() {
@@ -419,9 +433,22 @@ async function startServer() {
   // Start initialization in background
   console.log("Database initialization logic will run after port is bound...");
   
-  // Helper for db access since db can be null
-  const getDb = () => {
-    if (!db) throw new Error("Database not initialized");
+  // Helper for db access since db can be null or disconnected
+  const getDb = async () => {
+    if (!db) {
+      if (CONNECTION_STRING) {
+        console.log("Database instance was null. Re-initializing...");
+        db = new Database(CONNECTION_STRING);
+        try {
+          await db.sql`SELECT 1`;
+        } catch (e) {
+          console.error("Re-initialization query failed:", e);
+          throw new Error("Database connection failed");
+        }
+      } else {
+        throw new Error("Database not initialized and no connection string found");
+      }
+    }
     return db;
   };
 
@@ -436,11 +463,11 @@ async function startServer() {
       if (err) return res.status(403).json({ error: "Invalid token" });
       
       try {
-        const sessions = await getDb().sql`SELECT * FROM sessions WHERE token = ${token} AND is_active = 1`;
+        const sessions = await (await getDb()).sql`SELECT * FROM sessions WHERE token = ${token} AND is_active = 1`;
         const session = sessions[0];
         if (!session) return res.status(403).json({ error: "Session revoked or expired" });
 
-        await getDb().sql`UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = ${session.id}`;
+        await (await getDb()).sql`UPDATE sessions SET last_activity = CURRENT_TIMESTAMP WHERE id = ${session.id}`;
         
         req.user = user;
         req.sessionId = session.id;
@@ -454,7 +481,7 @@ async function startServer() {
   const authenticateAdmin = (req: any, res: any, next: any) => {
     authenticateToken(req, res, async () => {
       try {
-        const users = await getDb().sql`SELECT is_admin FROM users WHERE id = ${req.user.id}`;
+        const users = await (await getDb()).sql`SELECT is_admin FROM users WHERE id = ${req.user.id}`;
         const user = users[0];
         if (!user || !user.is_admin) {
           return res.status(403).json({ error: "Access denied. Admin only." });
@@ -470,7 +497,7 @@ async function startServer() {
 
   app.get("/api/admin/users", authenticateAdmin, async (req, res) => {
     try {
-      const users = await getDb().sql`SELECT id, email, is_paid, is_admin, created_at FROM users ORDER BY created_at DESC`;
+      const users = await (await getDb()).sql`SELECT id, email, is_paid, is_admin, created_at FROM users ORDER BY created_at DESC`;
       res.json(users);
     } catch (e) {
       res.status(500).json({ error: "Failed to fetch users" });
@@ -479,9 +506,9 @@ async function startServer() {
 
   app.get("/api/admin/modules", authenticateAdmin, async (req, res) => {
     try {
-      const modules = await getDb().sql`SELECT * FROM modules ORDER BY order_index ASC`;
+      const modules = await (await getDb()).sql`SELECT * FROM modules ORDER BY order_index ASC`;
       const modulesWithQuestions = await Promise.all(modules.map(async (m: any) => {
-        const questions = await getDb().sql`SELECT * FROM questions WHERE module_id = ${m.id}`;
+        const questions = await (await getDb()).sql`SELECT * FROM questions WHERE module_id = ${m.id}`;
         return {
           ...m,
           questions: questions.map((q: any) => ({
@@ -499,7 +526,7 @@ async function startServer() {
   app.post("/api/admin/modules", authenticateAdmin, async (req, res) => {
     const { title, description, content, image_url, is_free, order_index } = req.body;
     try {
-      await getDb().sql`
+      await (await getDb()).sql`
         INSERT INTO modules (title, description, content, image_url, is_free, order_index) 
         VALUES (${title}, ${description}, ${content}, ${image_url}, ${is_free ? 1 : 0}, ${order_index || 0})
       `;
@@ -513,7 +540,7 @@ async function startServer() {
     const { id } = req.params;
     const { title, description, content, image_url, is_free, order_index } = req.body;
     try {
-      await getDb().sql`
+      await (await getDb()).sql`
         UPDATE modules SET 
           title = ${title}, 
           description = ${description}, 
@@ -532,7 +559,7 @@ async function startServer() {
   app.delete("/api/admin/modules/:id", authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
-      await getDb().sql`DELETE FROM modules WHERE id = ${id}`;
+      await (await getDb()).sql`DELETE FROM modules WHERE id = ${id}`;
       res.json({ message: "Module deleted" });
     } catch (e) {
       res.status(500).json({ error: "Failed to delete module" });
@@ -548,9 +575,9 @@ async function startServer() {
     }
 
     try {
-      await getDb().sql`DELETE FROM questions WHERE module_id = ${id}`;
+      await (await getDb()).sql`DELETE FROM questions WHERE module_id = ${id}`;
       for (const q of questions) {
-        await getDb().sql`
+        await (await getDb()).sql`
           INSERT INTO questions (module_id, question, options, correct_option) 
           VALUES (${id}, ${q.question}, ${JSON.stringify(q.options)}, ${q.correct_option})
         `;
@@ -566,7 +593,7 @@ async function startServer() {
       if (!db) {
         return res.json([{ id: 1, title: "Introdução", description: "O início da sua jornada.", image_url: "https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=800&auto=format&fit=crop" }]);
       }
-      const courses = await getDb().sql`SELECT * FROM courses ORDER BY order_index ASC`;
+      const courses = await (await getDb()).sql`SELECT * FROM courses ORDER BY order_index ASC`;
       res.json(courses);
     } catch (e) {
       res.status(500).json({ error: "Failed to fetch courses" });
@@ -586,12 +613,12 @@ async function startServer() {
       }
       query += ` ORDER BY order_index ASC`;
       
-      const modules = await getDb().sql(query as any);
+      const modules = await (await getDb()).sql(query as any);
       
       if (modules.length === 0) {
         return res.json(STATIC_MODULES);
       }
-      const results = await getDb().sql`SELECT module_id, passed, score FROM quiz_results WHERE user_id = ${req.user.id}`;
+      const results = await (await getDb()).sql`SELECT module_id, passed, score FROM quiz_results WHERE user_id = ${req.user.id}`;
       
       const modulesWithStatus = modules.map((m: any, idx: number) => {
         const result = results.find((r: any) => r.module_id === m.id);
@@ -625,7 +652,7 @@ async function startServer() {
     const { id } = req.params;
     try {
       if (db) {
-        const questions = await getDb().sql`SELECT id, question, options FROM questions WHERE module_id = ${id}`;
+        const questions = await (await getDb()).sql`SELECT id, question, options FROM questions WHERE module_id = ${id}`;
         if (questions.length > 0) {
           return res.json(questions.map((q: any) => ({
             ...q,
@@ -674,7 +701,7 @@ async function startServer() {
       let correctAnswers: number[] = [];
       
       if (db) {
-        const questions = await getDb().sql`SELECT correct_option FROM questions WHERE module_id = ${id} ORDER BY id ASC`;
+        const questions = await (await getDb()).sql`SELECT correct_option FROM questions WHERE module_id = ${id} ORDER BY id ASC`;
         if (questions.length > 0) {
           correctAnswers = questions.map((q: any) => q.correct_option);
         }
@@ -706,14 +733,14 @@ async function startServer() {
       const passed = score >= 7 ? 1 : 0;
 
       // Update quiz_results
-      const existing = await getDb().sql`SELECT id FROM quiz_results WHERE user_id = ${userId} AND module_id = ${id}`;
+      const existing = await (await getDb()).sql`SELECT id FROM quiz_results WHERE user_id = ${userId} AND module_id = ${id}`;
       if (existing.length > 0) {
-        await getDb().sql`
+        await (await getDb()).sql`
           UPDATE quiz_results SET score = ${score}, passed = ${passed}, completed_at = CURRENT_TIMESTAMP 
           WHERE id = ${(existing[0] as any).id}
         `;
       } else {
-        await getDb().sql`
+        await (await getDb()).sql`
           INSERT INTO quiz_results (user_id, module_id, score, passed) 
           VALUES (${userId}, ${id}, ${score}, ${passed})
         `;
@@ -728,12 +755,12 @@ async function startServer() {
   app.post("/api/admin/users/:id/toggle-paid", authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
-      const results = await getDb().sql`SELECT is_paid FROM users WHERE id = ${id}`;
+      const results = await (await getDb()).sql`SELECT is_paid FROM users WHERE id = ${id}`;
       const user = results[0];
       if (!user) return res.status(404).json({ error: "User not found" });
 
       const newStatus = user.is_paid ? 0 : 1;
-      await getDb().sql`UPDATE users SET is_paid = ${newStatus} WHERE id = ${id}`;
+      await (await getDb()).sql`UPDATE users SET is_paid = ${newStatus} WHERE id = ${id}`;
       res.json({ message: "Status updated", is_paid: newStatus });
     } catch (e) {
       res.status(500).json({ error: "Failed to update user" });
@@ -743,8 +770,8 @@ async function startServer() {
   app.delete("/api/admin/users/:id", authenticateAdmin, async (req, res) => {
     const { id } = req.params;
     try {
-      await getDb().sql`DELETE FROM sessions WHERE user_id = ${id}`;
-      await getDb().sql`DELETE FROM users WHERE id = ${id}`;
+      await (await getDb()).sql`DELETE FROM sessions WHERE user_id = ${id}`;
+      await (await getDb()).sql`DELETE FROM users WHERE id = ${id}`;
       res.json({ message: "User deleted" });
     } catch (e) {
       res.status(500).json({ error: "Failed to delete user" });
@@ -760,15 +787,15 @@ async function startServer() {
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
       // SQLite Cloud might return metadata about the insert
-      await getDb().sql`INSERT INTO users (email, password) VALUES (${email}, ${hashedPassword})`;
+      await (await getDb()).sql`INSERT INTO users (email, password) VALUES (${email}, ${hashedPassword})`;
       
-      const userResults = await getDb().sql`SELECT id FROM users WHERE email = ${email}`;
+      const userResults = await (await getDb()).sql`SELECT id FROM users WHERE email = ${email}`;
       const user = userResults[0];
       
       const token = jwt.sign({ id: user.id, email: email }, JWT_SECRET, { expiresIn: "24h" });
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-      await getDb().sql`INSERT INTO sessions (user_id, token, expires_at) VALUES (${user.id}, ${token}, ${expiresAt})`;
+      await (await getDb()).sql`INSERT INTO sessions (user_id, token, expires_at) VALUES (${user.id}, ${token}, ${expiresAt})`;
 
       res.cookie("auth_token", token, {
         httpOnly: true,
@@ -790,19 +817,19 @@ async function startServer() {
     }
 
     try {
-      const results = await getDb().sql`SELECT * FROM users WHERE email = ${email}`;
+      const results = await (await getDb()).sql`SELECT * FROM users WHERE email = ${email}`;
       const user = results[0];
 
       if (!user || !(await bcrypt.compare(password, user.password))) {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
-      await getDb().sql`UPDATE sessions SET is_active = 0 WHERE user_id = ${user.id}`;
-
+      await (await getDb()).sql`UPDATE sessions SET is_active = 0 WHERE user_id = ${user.id}`;
+      
       const token = jwt.sign({ id: user.id, email: user.email }, JWT_SECRET, { expiresIn: "24h" });
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
 
-      await getDb().sql`INSERT INTO sessions (user_id, token, expires_at) VALUES (${user.id}, ${token}, ${expiresAt})`;
+      await (await getDb()).sql`INSERT INTO sessions (user_id, token, expires_at) VALUES (${user.id}, ${token}, ${expiresAt})`;
 
       res.cookie("auth_token", token, {
         httpOnly: true,
@@ -819,7 +846,7 @@ async function startServer() {
 
   app.post("/api/auth/logout", authenticateToken, async (req: any, res) => {
     try {
-      await getDb().sql`UPDATE sessions SET is_active = 0 WHERE id = ${req.sessionId}`;
+      await (await getDb()).sql`UPDATE sessions SET is_active = 0 WHERE id = ${req.sessionId}`;
       res.clearCookie("auth_token");
       res.json({ message: "Logged out" });
     } catch (e) {
@@ -829,7 +856,7 @@ async function startServer() {
 
   app.get("/api/auth/me", authenticateToken, async (req: any, res) => {
     try {
-      const results = await getDb().sql`SELECT id, email, is_paid, is_admin FROM users WHERE id = ${req.user.id}`;
+      const results = await (await getDb()).sql`SELECT id, email, is_paid, is_admin FROM users WHERE id = ${req.user.id}`;
       const user = results[0];
       res.json({ user });
     } catch (e) {
@@ -839,7 +866,7 @@ async function startServer() {
 
   app.get("/api/progress", authenticateToken, async (req: any, res) => {
     try {
-      const results = await getDb().sql`SELECT * FROM progress WHERE user_id = ${req.user.id}`;
+      const results = await (await getDb()).sql`SELECT * FROM progress WHERE user_id = ${req.user.id}`;
       const progress = results[0];
       if (progress) {
         res.json({
@@ -861,9 +888,9 @@ async function startServer() {
 
     try {
       // Manual UPSERT for SQLite flavors that might not support ON CONFLICT yet or just to be safe
-      const existing = await getDb().sql`SELECT id FROM progress WHERE user_id = ${userId}`;
+      const existing = await (await getDb()).sql`SELECT id FROM progress WHERE user_id = ${userId}`;
       if (existing.length > 0) {
-        await getDb().sql`
+        await (await getDb()).sql`
           UPDATE progress SET 
             current_step = ${current_step || 0}, 
             score = ${score || 0}, 
@@ -872,7 +899,7 @@ async function startServer() {
           WHERE user_id = ${userId}
         `;
       } else {
-        await getDb().sql`
+        await (await getDb()).sql`
           INSERT INTO progress (user_id, current_step, score, answers, last_updated) 
           VALUES (${userId}, ${current_step || 0}, ${score || 0}, ${answersStr}, CURRENT_TIMESTAMP)
         `;

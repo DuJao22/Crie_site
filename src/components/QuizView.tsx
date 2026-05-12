@@ -29,24 +29,31 @@ export default function QuizView({ moduleId, moduleTitle, onClose, onSuccess }: 
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>(new Array(10).fill(null));
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ score: number, passed: boolean } | null>(null);
 
-  useEffect(() => {
-    const fetchQuiz = async () => {
-      try {
-        const res = await fetch(`/api/modules/${moduleId}/quiz`, { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          setQuestions(data);
-          setAnswers(new Array(data.length).fill(null));
-        }
-      } catch (e) {
-        console.error('Failed to fetch quiz', e);
-      } finally {
-        setLoading(false);
+  const fetchQuiz = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/modules/${moduleId}/quiz`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setQuestions(data);
+        setAnswers(new Array(data.length).fill(null));
+      } else {
+        setError('Erro ao carregar o questionário. Verifique sua conexão.');
       }
-    };
+    } catch (e) {
+      console.error('Failed to fetch quiz', e);
+      setError('Falha na comunicação com o servidor.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchQuiz();
   }, [moduleId]);
 
@@ -75,6 +82,24 @@ export default function QuizView({ moduleId, moduleTitle, onClose, onSuccess }: 
     return (
       <div className="flex-1 flex items-center justify-center bg-[#09090b]">
         <div className="w-12 h-12 border-4 border-brand-purple border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-[#09090b] p-6 pb-24 md:pb-6 text-center space-y-4">
+        <XCircle size={64} className="text-red-500/50" />
+        <h2 className="text-2xl font-black uppercase text-white">Ops! Algo deu errado</h2>
+        <p className="text-slate-500 text-sm">{error}</p>
+        <div className="flex gap-4">
+          <button onClick={fetchQuiz} className="px-8 py-4 bg-brand-purple text-white font-black uppercase text-xs rounded-xl flex items-center gap-2">
+            <RotateCcw size={16} /> Tentar Novamente
+          </button>
+          <button onClick={onClose} className="px-8 py-4 bg-white/5 border border-white/10 text-white font-black uppercase text-xs rounded-xl">
+            Sair
+          </button>
+        </div>
       </div>
     );
   }
